@@ -172,8 +172,8 @@ function Game(canvas) {
 
     // Queues to handle animations. Have several queues so that unrelated
     // animations can happen concurrently
-    this.animationQueues = {};
-    this.animationQueues.playerRotations = new AnimationHandler();
+    this.animationHandlers = {};
+    this.animationHandlers.playerRotations = new AnimationHandler();
 }
 
 Game.prototype.update = function(dt) {
@@ -204,6 +204,13 @@ Game.prototype.update = function(dt) {
         this.player.move(dt, dx, dy);
     }
 
+    // Process animation handlers
+    for (var a in this.animationHandlers) {
+        var anim = this.animationHandlers[a];
+        if (anim.queue.length > 0) {
+            anim.update(dt);
+        }
+    }
 
     // Spawn some targets in a very crude way
     if (Math.random() < 0.01) {
@@ -263,7 +270,7 @@ Game.prototype.handleKeyDown = function(e) {
 
     if (e.keyCode == KEYS.rotateAnticlockwise || e.keyCode == KEYS.rotateClockwise) {
         var direction = (e.keyCode == KEYS.rotateAnticlockwise) ? ANTI_CLOCKWISE : CLOCKWISE;
-        this.animationQueues.playerRotations.addToQueue([
+        this.animationHandlers.playerRotations.addToQueue([
             this.player.getRotationCallback(direction), 0, 1, TIMINGS.rotationTime
         ]);
     }
@@ -277,8 +284,18 @@ Game.prototype.handleKeyUp = function(e) {
 
 function AnimationHandler() {
     this.queue = [];
+
+    // null t parameters for clarity
+    this.t = null;
+    this.tEnd = null;
+    this.time = null;
 }
 
+/*
+ * Queue up a new animation. args should be [callback, tStart, tEnd, time], where
+ * `callback` is called periodically with a single parameter `t` that varies
+ * linearly from `tStart` to `tEnd` over `time` seconds
+ */
 AnimationHandler.prototype.addToQueue = function(args) {
     this.queue.push(args);
 
@@ -288,41 +305,33 @@ AnimationHandler.prototype.addToQueue = function(args) {
 }
 
 /*
- * Start the next animation
+ * Setup the next animation
  */
 AnimationHandler.prototype.next = function() {
-    this.animate.apply(this, this.queue[0]);
+    this.callback = this.queue[0][0];
+    this.tStart = this.queue[0][1];
+    this.tEnd = this.queue[0][2];
+    this.time = this.queue[0][3];
+    this.t = this.tStart;
 };
 
-/*
- * Call `callback` periodically, passing a single parameter `t` that varies
- * linearly from `tStart` to `tEnd` over `time` seconds
- */
-AnimationHandler.prototype.animate = function(callback, tStart, tEnd, time) {
-    callback(tStart);
-    timeMs = time * 1000;
-    var startTime = performance.now();
-    var thisQueue = this;
-    var animation = window.setInterval(function() {
-        var now = performance.now();
-        var progress = (now - startTime) / timeMs;
-        var t = tStart + progress * (tEnd - tStart);
-        if (t > tEnd) {
-            t = tEnd;
+AnimationHandler.prototype.update = function(dt) {
+    this.callback(this.t);
+
+    if (this.t == this.tEnd) {
+        this.queue.shift();
+
+        if (this.queue.length > 0) {
+            this.next();
         }
+        return;
+    }
 
-        callback(t);
+    this.t += dt * (this.tEnd - this.tStart) / this.time;
 
-        if (t == tEnd) {
-            // Stop animation and remove from queue
-            window.clearInterval(animation);
-            thisQueue.queue.shift();
-
-            if (thisQueue.queue.length > 0) {
-                thisQueue.next();
-            }
-        }
-    }, 10);
+    if (this.t >= this.tEnd) {
+        this.t = this.tEnd;
+    }
 }
 
 /******************************************************************************/
