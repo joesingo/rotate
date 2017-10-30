@@ -2,7 +2,8 @@ CLOCKWISE = "clockwise";
 ANTI_CLOCKWISE = "anticlockwise";
 
 TIMINGS = {
-    "rotationTime": 0.1
+    "rotationTime": 0.1,
+    "starCreation": 2
 };
 
 SIZES = {
@@ -10,13 +11,21 @@ SIZES = {
         "width": 60, "height": 60
     },
     "target": {
-        "width": 20, "height": 20
-    }
+        "width": 40, "height": 40
+    },
+    "starRadius": 5
 };
 
 COLOURS = {
     "player": ["red", "green", "blue", "orange"],
-    "background": "#333"
+    "background": "#333",
+    "star": "white"
+};
+
+CONSTANTS = {
+    "numStars": 10,
+    "starOpacity": 0.15,
+    "starSpeed": 5
 };
 
 KEYS = {
@@ -165,8 +174,7 @@ function Game(canvas) {
     this.scrollSpeed = 70;
     this.player = new Player(300, 100);
     this.targets = [];
-
-    this.topY = 0;  // y-coordinate of the top of the screen
+    this.stars = [];
 
     this.pressedKeys = {};
 
@@ -174,18 +182,23 @@ function Game(canvas) {
     // animations can happen concurrently
     this.animationHandlers = {};
     this.animationHandlers.playerRotations = new AnimationHandler();
+    this.animationHandlers.targets = new AnimationHandler();
+
+    this.timers = {};
+
+    this.targetCreationInterval = 1.5;
+    this.timers["targets"] = new Timer(this.targetCreationInterval, this.createTarget.bind(this));
+
+    for (var i=0; i<CONSTANTS.numStars; i++) {
+        this.createStar();
+    }
 }
 
 Game.prototype.update = function(dt) {
-    var scrollAmount = this.scrollSpeed * dt;
-    this.ctx.translate(0, -scrollAmount);
-    this.topY += scrollAmount;
-
     this.ctx.fillStyle = COLOURS.background;
-    this.ctx.fillRect(0, this.topY, this.width, this.height);
+    this.ctx.fillRect(0, 0, this.width, this.height);
 
     // Handle player movement/rotation
-    this.player.y += scrollAmount;
     var dx = 0;
     var dy = 0;
     if (KEYS.left in this.pressedKeys) {
@@ -204,6 +217,12 @@ Game.prototype.update = function(dt) {
         this.player.move(dt, dx, dy);
     }
 
+    // Scroll targets
+    var scrollAmount = this.scrollSpeed * dt;
+    for (var i=0; i<this.targets.length; i++) {
+        this.targets[i].y -= scrollAmount;
+    }
+
     // Process animation handlers
     for (var a in this.animationHandlers) {
         var anim = this.animationHandlers[a];
@@ -212,11 +231,14 @@ Game.prototype.update = function(dt) {
         }
     }
 
-    // Spawn some targets in a very crude way
-    if (Math.random() < 0.01) {
-        var x = Math.random() * this.width;
-        var colour = COLOURS.player[Math.floor(Math.random() * 4)];
-        this.targets.push(new Target(x, this.height + this.topY, colour));
+    // Update timers
+    for (var t in this.timers) {
+        this.timers[t].update(dt);
+    }
+
+    // Update stars
+    for (var t in this.stars) {
+        this.stars[t].update(dt);
     }
 
     // Collision detection
@@ -252,10 +274,26 @@ Game.prototype.update = function(dt) {
     }
 
     // Drawing
+    for (var i=0; i<this.stars.length; i++) {
+        this.stars[i].draw(this.ctx);
+    }
     for (var i=0; i<this.targets.length; i++) {
         this.targets[i].draw(this.ctx);
     }
     this.player.draw(this.ctx);
+}
+
+Game.prototype.createTarget = function() {
+    var y = this.height + SIZES.target.height / 2;
+    var x = (SIZES.target.width / 2) + Math.random() * (this.width - SIZES.target.width);
+    var colour = COLOURS.player[Math.floor(Math.random() * COLOURS.player.length)];
+    this.targets.push(new Target(x, y, colour));
+}
+
+Game.prototype.createStar = function() {
+    var y = Math.random() * this.height;
+    var x = Math.random() * this.width;
+    this.stars.push(new Star(x, y));
 }
 
 Game.prototype.handleTargetCollision = function(faceNum, target) {
@@ -278,6 +316,40 @@ Game.prototype.handleKeyDown = function(e) {
 
 Game.prototype.handleKeyUp = function(e) {
     delete this.pressedKeys[e.keyCode];
+}
+
+/******************************************************************************/
+
+function Star(x, y) {
+    this.x = x;
+    this.y = y;
+
+    var angle = Math.random() * 2 * Math.PI;
+    this.u = CONSTANTS.starSpeed * Math.cos(angle);
+    this.v = CONSTANTS.starSpeed * Math.sin(angle);
+}
+
+Star.prototype.update = function(dt) {
+    this.x += this.u * dt;
+    this.y += this.v * dt;
+
+    if (this.x < 0 || this.x > game.width) {
+        var s = (this.x < 0) ? 1 : -1;
+        this.x += s * game.width;
+    }
+    if (this.y < 0 || this.y > game.height) {
+        var s = (this.y < 0) ? 1 : -1;
+        this.y += s * game.height;
+    }
+}
+
+Star.prototype.draw = function(ctx) {
+    ctx.fillStyle = COLOURS.star;
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, SIZES.starRadius, 0, 2 * Math.PI);
+    ctx.globalAlpha = CONSTANTS.starOpacity;
+    ctx.fill();
+    ctx.globalAlpha = 1;
 }
 
 /******************************************************************************/
@@ -336,15 +408,26 @@ AnimationHandler.prototype.update = function(dt) {
 
 /******************************************************************************/
 
+function Timer(interval, callback) {
+    this.timeLeft = interval;
+
+    this.update = function(dt) {
+        this.timeLeft -= dt;
+
+        if (this.timeLeft <= 0) {
+            this.timeLeft = interval;
+            callback();
+        }
+    }
+}
+
+/******************************************************************************/
+
 var canvas = document.getElementById("game-canvas");
 var game = new Game(canvas);
 
-window.addEventListener("keydown", function(e) {
-    game.handleKeyDown(e);
-});
-window.addEventListener("keyup", function(e) {
-    game.handleKeyUp(e);
-});
+window.addEventListener("keydown", game.handleKeyDown.bind(game));
+window.addEventListener("keyup", game.handleKeyUp.bind(game));
 
 // Start game timer
 var now = null;
