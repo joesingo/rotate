@@ -111,7 +111,7 @@ Player.prototype.draw = function(ctx) {
 /*
  * Move the player in the direction [dx, dy]
  */
-Player.prototype.move = function(dt, dx, dy) {
+Player.prototype.move = function(dt, dx, dy, game) {
     var dist = this.speed * dt;
     // Normalise the vector [dx, dy] and then scale by distance to travel
     // in this frame
@@ -119,6 +119,11 @@ Player.prototype.move = function(dt, dx, dy) {
     var scale = dist / mag;
     this.x += dx * scale;
     this.y += dy * scale;
+
+    // Ensure player does not go off the screen
+    var hs = this.size / 2;
+    this.x = Math.min(game.width - hs, Math.max(hs, this.x));
+    this.y = Math.min(game.height - hs, Math.max(hs, this.y));
 }
 
 /*
@@ -211,7 +216,7 @@ Game.prototype.update = function(dt) {
         dy = 1;
     }
     if (dx != 0 || dy != 0) {
-        this.player.move(dt, dx, dy);
+        this.player.move(dt, dx, dy, this);
     }
 
     // Scroll targets
