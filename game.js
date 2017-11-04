@@ -7,9 +7,7 @@ TIMINGS = {
 };
 
 SIZES = {
-    "player": {
-        "width": 60, "height": 60
-    },
+    "player": 60,
     "target": {
         "width": 40, "height": 40
     },
@@ -67,8 +65,7 @@ function Player(x, y) {
     this.x = x;
     this.y = y;
 
-    this.width = SIZES.player.width;
-    this.height = SIZES.player.height;
+    this.size = SIZES.player;
 
     this.speed = 350;
     // Rotation describes how many anti-cw 90 deg. turns the id 0 colour is from
@@ -90,8 +87,8 @@ Player.prototype.draw = function(ctx) {
     // be rotated to draw other triangles
     var points = [
         [0, 0],
-        [-this.width / 2, -this.height / 2],
-        [this.width / 2, - this.height / 2]
+        [-this.size / 2, -this.size / 2],
+        [this.size / 2, - this.size / 2]
     ];
 
     for (var i=0; i<4; i++) {
@@ -257,14 +254,15 @@ Game.prototype.update = function(dt) {
         for (var j=0; j<corners.length; j++) {
             var x = corners[j][0];
             var y = corners[j][1];
-            if (p.x - p.width / 2 <= x && x <= p.x + p.width / 2 &&
-                p.y - p.height / 2 <= y && y <= p.y + p.height / 2) {
+            var halfSize = p.size / 2;
+            if (p.x - halfSize <= x && x <= p.x + halfSize &&
+                p.y - halfSize <= y && y <= p.y + halfSize) {
 
                 var distances = [
-                    y - (p.y - p.height / 2),
-                    x - (p.x - p.width / 2),
-                    p.y + p.height / 2 - y,
-                    p.x + p.width / 2 - x
+                    y - (p.y - halfSize),
+                    x - (p.x - halfSize),
+                    p.y + halfSize - y,
+                    p.x + halfSize - x
                 ];
                 var faceNum = distances.indexOf(Math.min.apply(null, distances));
                 this.handleTargetCollision(faceNum, t);
