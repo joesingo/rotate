@@ -7,7 +7,9 @@ TIMINGS = {
 };
 
 SIZES = {
-    "player": 60,
+    "player": {
+        "size": 60, "outlineWidth": 3
+    },
     "target": {
         "width": 40, "height": 40
     },
@@ -18,7 +20,10 @@ SIZES = {
 };
 
 COLOURS = {
-    "player": ["red", "green", "blue", "orange"],
+    "player": {
+        "colours": ["red", "green", "blue", "orange"],
+        "outline": "white"
+    },
     "background": "#333",
     "star": "white",
     "lives": {
@@ -77,7 +82,7 @@ function Player(x, y) {
     this.x = x;
     this.y = y;
 
-    this.size = SIZES.player;
+    this.size = SIZES.player.size;
 
     this.lives = CONSTANTS.startingLives;
     this.speed = 350;
@@ -89,13 +94,11 @@ function Player(x, y) {
 Player.prototype.getFaceColour = function(faceNum) {
     var r = Math.round(this.rotation);
     var i = Utils.modulo(faceNum - r, 4);
-    return COLOURS.player[i];
+    return COLOURS.player.colours[i];
 };
 
 
 Player.prototype.draw = function(ctx) {
-    ctx.fillStyle = COLOURS.player;
-
     // Points for the top triangle centered at the origin. These points will
     // be rotated to draw other triangles
     var points = [
@@ -107,7 +110,7 @@ Player.prototype.draw = function(ctx) {
     for (var i=0; i<4; i++) {
         var angle = (i + this.rotation) * Math.PI / 2;
 
-        ctx.fillStyle = COLOURS.player[i];
+        ctx.fillStyle = COLOURS.player.colours[i];
         ctx.beginPath();
         for (var j=0; j<points.length; j++) {
             // We have -y in place in y in the usual formula since +ve y direction is downwards
@@ -119,6 +122,15 @@ Player.prototype.draw = function(ctx) {
         }
         ctx.fill();
     }
+
+    // Draw outline
+    ctx.strokeStyle = COLOURS.player.outline;
+    ctx.lineWidth = SIZES.player.outlineWidth;
+    ctx.save();
+    ctx.translate(this.x, this.y);
+    ctx.rotate(-this.rotation * Math.PI / 2);
+    ctx.strokeRect(-this.size / 2, -this.size / 2, this.size, this.size);
+    ctx.restore();
 };
 
 /*
@@ -177,6 +189,11 @@ Target.prototype.draw = function(ctx) {
     ctx.fillStyle = this.colour;
     ctx.fillRect(this.x - this.width / 2, this.y - this.height / 2, this.width,
                  this.height);
+    // Use same colour and width as player outline
+    ctx.strokeStyle = COLOURS.player.outline;
+    ctx.lineWidth = SIZES.player.outlineWidth;
+    ctx.strokeRect(this.x - this.width / 2, this.y - this.height / 2, this.width,
+                   this.height);
 }
 
 /******************************************************************************/
@@ -312,7 +329,7 @@ Game.prototype.update = function(dt) {
 Game.prototype.createTarget = function() {
     var y = this.height + SIZES.target.height / 2;
     var x = (SIZES.target.width / 2) + Math.random() * (this.width - SIZES.target.width);
-    var colour = COLOURS.player[Math.floor(Math.random() * COLOURS.player.length)];
+    var colour = COLOURS.player.colours[Math.floor(Math.random() * COLOURS.player.colours.length)];
     this.targets.push(new Target(x, y, colour));
 }
 
