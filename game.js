@@ -11,19 +11,31 @@ SIZES = {
     "target": {
         "width": 40, "height": 40
     },
-    "starRadius": 5
+    "starRadius": 5,
+    "lives": {
+        "width": 15, "height": 30, "outlineWidth": 4
+    }
 };
 
 COLOURS = {
     "player": ["red", "green", "blue", "orange"],
     "background": "#333",
-    "star": "white"
+    "star": "white",
+    "lives": {
+        "interior": "red", "outline": "white"
+    }
 };
 
 CONSTANTS = {
-    "numStars": 10,
+    "startingLives": 10,
+    "numStars": 20,
     "starOpacity": 0.15,
-    "starSpeed": 5
+    "starSpeed": 5,
+    "padding": {
+        "lives": {
+            "x": 15, "y": 10
+        }
+    }
 };
 
 KEYS = {
@@ -67,6 +79,7 @@ function Player(x, y) {
 
     this.size = SIZES.player;
 
+    this.lives = CONSTANTS.startingLives;
     this.speed = 350;
     // Rotation describes how many anti-cw 90 deg. turns the id 0 colour is from
     // the top triangle
@@ -172,6 +185,7 @@ function Game(canvas) {
     this.ctx = canvas.getContext("2d");
     this.width = canvas.width;
     this.height = canvas.height;
+    this.inProgress = true;
 
     this.scrollSpeed = 70;
     this.player = new Player(300, 100);
@@ -222,7 +236,14 @@ Game.prototype.update = function(dt) {
     // Scroll targets
     var scrollAmount = this.scrollSpeed * dt;
     for (var i=0; i<this.targets.length; i++) {
-        this.targets[i].y -= scrollAmount;
+        var t = this.targets[i];
+        t.y -= scrollAmount;
+
+        if (t.y + t.height / 2 <= 0) {
+            this.loseLife();
+            this.targets.splice(i, 1);
+            i--;
+        }
     }
 
     // Process animation handlers
@@ -284,6 +305,8 @@ Game.prototype.update = function(dt) {
         this.targets[i].draw(this.ctx);
     }
     this.player.draw(this.ctx);
+
+    this.drawLives(this.ctx, this.player.lives);
 }
 
 Game.prototype.createTarget = function() {
@@ -301,9 +324,18 @@ Game.prototype.createStar = function() {
 
 Game.prototype.handleTargetCollision = function(faceNum, target) {
     if (this.player.getFaceColour(faceNum) != target.colour) {
-        console.log("oops");
+        this.loseLife();
     }
     this.targets.splice(this.targets.indexOf(target), 1);
+}
+
+
+Game.prototype.loseLife = function() {
+    this.player.lives--;
+
+    if (this.player.lives == 0) {
+        this.gameOver();
+    }
 }
 
 Game.prototype.handleKeyDown = function(e) {
@@ -319,6 +351,29 @@ Game.prototype.handleKeyDown = function(e) {
 
 Game.prototype.handleKeyUp = function(e) {
     delete this.pressedKeys[e.keyCode];
+}
+
+Game.prototype.gameOver = function(e) {
+    this.inProgress = false;
+}
+
+Game.prototype.drawLives = function(ctx, n) {
+    var x = CONSTANTS.padding.lives.x;
+    var y = CONSTANTS.padding.lives.y;
+    for (var i=0; i<n; i++) {
+        // Draw solid interior
+        ctx.fillStyle = COLOURS.lives.interior;
+        var w = SIZES.lives.width;
+        var h = SIZES.lives.height;
+        ctx.fillRect(x, y, w, h);
+
+        // Draw outline
+        ctx.strokeStyle =  COLOURS.lives.outline;
+        ctx.lineWidth = SIZES.lives.outlineWidth;
+        ctx.strokeRect(x, y, w, h);
+
+        x += SIZES.lives.width + CONSTANTS.padding.lives.x;
+    }
 }
 
 /******************************************************************************/
@@ -435,10 +490,16 @@ window.addEventListener("keyup", game.handleKeyUp.bind(game));
 // Start game timer
 var now = null;
 var then = performance.now();
-window.setInterval(function() {
+var mainLoop = window.setInterval(function() {
     now = performance.now();
     var dt = (now - then) / 1000;
     then = now;
-    game.update(dt);
+
+    if (game.inProgress) {
+        game.update(dt);
+    }
+    else {
+        window.clearInterval(mainLoop);
+    }
 }, 10);
 
