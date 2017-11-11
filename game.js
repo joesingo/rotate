@@ -14,6 +14,9 @@ SIZES = {
         "width": 40, "height": 40
     },
     "starRadius": 5,
+    "bomb": {
+        "radius": 20, "outlineWidth": 3
+    },
     "lives": {
         "width": 15, "height": 30, "outlineWidth": 4
     }
@@ -26,6 +29,9 @@ COLOURS = {
     },
     "background": "#333",
     "star": "white",
+    "bomb": {
+        "interior": "black", "outline": "white"
+    },
     "lives": {
         "interior": "red", "outline": "white"
     }
@@ -66,6 +72,24 @@ var Utils = {
         else {
             return n - (-a % n);
         }
+    },
+
+    /*
+     * Return true if two rectangles collide, and false otherwise. The x and y
+     * coordinates should be of the top left corner of each rectangle
+     */
+    "rectanglesCollide": function(x1, y1, width1, height1,
+                                  x2, y2, width2, height2) {
+        var overlapX = (
+            (x1 <= x2 && x2 <= x1 + width1) ||
+            (x2 <= x1 && x1 <= x2 + width2)
+        )
+        var overlapY = (
+            (y1 <= y2 && y2 <= y1 + width1) ||
+            (y2 <= y1 && y1 <= y2 + width2)
+        )
+
+        return overlapX && overlapY;
     }
 };
 
@@ -196,6 +220,86 @@ Target.prototype.draw = function(ctx) {
                    this.height);
 }
 
+/*
+ * Return the y-coordinate of the lowest point of the target
+ */
+Target.prototype.getBottomYCoord = function() {
+    return this.y + this.height / 2;
+}
+
+/*
+ * Return the face number of the player that has collided with the player, to
+ * be used in the event of a collision
+ */
+Target.prototype.getCollisionFace = function(player) {
+    // Calculate distance from center of each edge off player to center of target.
+    // Smallest distance will tell us which edge collided with the target
+    var points = [
+        [player.x, player.y - player.size / 2],  // face 0
+        [player.x - player.size / 2, player.y],  // face 1
+        [player.x, player.y + player.size / 2],  // face 2
+        [player.x + player.size / 2, player.y]   // face 3
+    ];
+    var distances = points.map(function(point) {
+        var dx = point[0] - this.x;
+        var dy = point[1] - this.y;
+        // No need to sqrt since distance is minimised when squared distance is
+        return dx*dx + dy*dy;
+    }, this);
+    return distances.indexOf(Math.min.apply(null, distances));
+}
+
+/*
+ * Return true if the target overlaps with the player, and false otherwise
+ */
+Target.prototype.collidesWithPlayer = function(player) {
+    return Utils.rectanglesCollide(
+        player.x - player.size / 2, player.y - player.size / 2, player.size, player.size,
+        this.x - this.width / 2, this.y - this.width / 2, this.width, this.height
+    );
+}
+
+/******************************************************************************/
+
+function Bomb(x, y) {
+    this.x = x;
+    this.y = y;
+    this.radius = SIZES.bomb.radius
+}
+
+Bomb.prototype.draw = function(ctx) {
+    // Draw outline by drawing border circle with full radius, and smaller circle
+    // with interior colour
+    var d = [
+        [this.radius, COLOURS.bomb.outline],
+        [this.radius - SIZES.bomb.outlineWidth, COLOURS.bomb.interior]
+    ];
+    for (var i=0; i<d.length; i++) {
+        ctx.fillStyle = d[i][1];
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, d[i][0], 0, 2 * Math.PI);
+        ctx.fill();
+    }
+}
+
+/*
+ * Return the y-coordinate of the lowest point of the bomb
+ */
+Bomb.prototype.getBottomYCoord = function() {
+    return this.y + this.radius;
+}
+
+/*
+ * Return true if the bomb overlaps with the player, and false otherwise
+ */
+Bomb.prototype.collidesWithPlayer = function(player) {
+    // Treat bomb as a rectangle for simplicity
+    return Utils.rectanglesCollide(
+        player.x - player.size / 2, player.y - player.size / 2, player.size,  player.size,
+        this.x - this.radius, this.y - this.radius, 2 * this.radius, 2 * this.radius
+    );
+}
+
 /******************************************************************************/
 
 function Game(canvas) {
@@ -206,7 +310,9 @@ function Game(canvas) {
 
     this.scrollSpeed = 70;
     this.player = new Player(300, 100);
-    this.targets = [];
+    this.enemies = {
+        "targets": [], "bombs": []
+    };
     this.stars = [];
 
     this.pressedKeys = {};
@@ -219,8 +325,8 @@ function Game(canvas) {
 
     this.timers = {};
 
-    this.targetCreationInterval = 1.5;
-    this.timers["targets"] = new Timer(this.targetCreationInterval, this.createTarget.bind(this));
+    this.enemyCreationInterval = 1.5;
+    this.timers["enemies"] = new Timer(this.enemyCreationInterval, this.createEnemy.bind(this));
 
     for (var i=0; i<CONSTANTS.numStars; i++) {
         this.createStar();
@@ -250,16 +356,18 @@ Game.prototype.update = function(dt) {
         this.player.move(dt, dx, dy, this);
     }
 
-    // Scroll targets
+    // Scroll enemies
     var scrollAmount = this.scrollSpeed * dt;
-    for (var i=0; i<this.targets.length; i++) {
-        var t = this.targets[i];
-        t.y -= scrollAmount;
+    for (var type in this.enemies) {
+        for (var i=0; i<this.enemies[type].length; i++) {
+            var e = this.enemies[type][i];
+            e.y -= scrollAmount;
 
-        if (t.y + t.height / 2 <= 0) {
-            this.loseLife();
-            this.targets.splice(i, 1);
-            i--;
+            if (e.getBottomYCoord() <= 0) {
+                this.loseLife();
+                this.enemies[type].splice(i, 1);
+                i--;
+            }
         }
     }
 
@@ -282,34 +390,12 @@ Game.prototype.update = function(dt) {
     }
 
     // Collision detection
-    for (var i=0; i<this.targets.length; i++) {
-        var p = this.player;
-        var t = this.targets[i];
+    for (var type in this.enemies) {
+        for (var i=0; i<this.enemies[type].length; i++) {
+            var e = this.enemies[type][i];
 
-        // Note: here we assume each side of the targets are smaller than all
-        // sides of the player
-        var corners = [
-            [t.x - t.width / 2, t.y - t.height / 2],
-            [t.x - t.width / 2, t.y + t.height / 2],
-            [t.x + t.width / 2, t.y + t.height / 2],
-            [t.x + t.width / 2, t.y - t.height / 2]
-        ];
-        for (var j=0; j<corners.length; j++) {
-            var x = corners[j][0];
-            var y = corners[j][1];
-            var halfSize = p.size / 2;
-            if (p.x - halfSize <= x && x <= p.x + halfSize &&
-                p.y - halfSize <= y && y <= p.y + halfSize) {
-
-                var distances = [
-                    y - (p.y - halfSize),
-                    x - (p.x - halfSize),
-                    p.y + halfSize - y,
-                    p.x + halfSize - x
-                ];
-                var faceNum = distances.indexOf(Math.min.apply(null, distances));
-                this.handleTargetCollision(faceNum, t);
-                break;
+            if (e.collidesWithPlayer(this.player)) {
+                this.handleEnemyCollision(e, type);
             }
         }
     }
@@ -318,19 +404,47 @@ Game.prototype.update = function(dt) {
     for (var i=0; i<this.stars.length; i++) {
         this.stars[i].draw(this.ctx);
     }
-    for (var i=0; i<this.targets.length; i++) {
-        this.targets[i].draw(this.ctx);
+    for (var type in this.enemies) {
+        for (var i=0; i<this.enemies[type].length; i++) {
+            var e = this.enemies[type][i];
+            e.draw(this.ctx);
+        }
     }
     this.player.draw(this.ctx);
 
     this.drawLives(this.ctx, this.player.lives);
 }
 
-Game.prototype.createTarget = function() {
-    var y = this.height + SIZES.target.height / 2;
-    var x = (SIZES.target.width / 2) + Math.random() * (this.width - SIZES.target.width);
-    var colour = COLOURS.player.colours[Math.floor(Math.random() * COLOURS.player.colours.length)];
-    this.targets.push(new Target(x, y, colour));
+/*
+ * Create an enemy - either a target or a bomb
+ */
+Game.prototype.createEnemy = function() {
+    var w = null;
+    var h = null;
+
+    var i = Math.floor(Math.random() * 2);
+    var type = ["targets", "bombs"][i];
+    if (type == "target") {
+        w = SIZES.target.width;
+        h = SIZES.target.height;
+    }
+    else if (type == "bombs") {
+        w = 2 * SIZES.bomb.radius;
+        h = w;
+    }
+
+    var y = this.height + h / 2;
+    var x = (w / 2) + Math.random() * (this.width - w);
+    var enemy = null;
+
+    if (type == "targets") {
+        var colour = COLOURS.player.colours[Math.floor(Math.random() * COLOURS.player.colours.length)];
+        enemy = new Target(x, y, colour);
+    }
+    else if (type == "bombs") {
+        enemy = new Bomb(x, y);
+    }
+    this.enemies[type].push(enemy);
 }
 
 Game.prototype.createStar = function() {
@@ -339,11 +453,22 @@ Game.prototype.createStar = function() {
     this.stars.push(new Star(x, y));
 }
 
-Game.prototype.handleTargetCollision = function(faceNum, target) {
-    if (this.player.getFaceColour(faceNum) != target.colour) {
+/*
+ * Handle player collision with an enemy
+ */
+Game.prototype.handleEnemyCollision = function(enemy, type) {
+    if (type == "targets") {
+        var faceNum = enemy.getCollisionFace(this.player);
+
+        if (this.player.getFaceColour(faceNum) != enemy.colour) {
+            this.loseLife();
+        }
+    }
+    else if (type == "bombs") {
         this.loseLife();
     }
-    this.targets.splice(this.targets.indexOf(target), 1);
+
+    this.enemies[type].splice(this.enemies[type].indexOf(enemy), 1);
 }
 
 
