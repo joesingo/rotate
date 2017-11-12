@@ -3,7 +3,9 @@ ANTI_CLOCKWISE = "anticlockwise";
 
 TIMINGS = {
     "rotationTime": 0.1,
-    "starCreation": 2
+    "starCreation": 2,
+    // The minimum time between between firing bullets when holding shoot button
+    "shootInterval": 0.2,
 };
 
 SIZES = {
@@ -16,6 +18,9 @@ SIZES = {
     "starRadius": 5,
     "bomb": {
         "radius": 20, "outlineWidth": 3
+    },
+    "bullet": {
+        "radius": 5, "outlineWidth": 2
     },
     "lives": {
         "width": 15, "height": 30, "outlineWidth": 4
@@ -32,6 +37,9 @@ COLOURS = {
     "bomb": {
         "interior": "black", "outline": "white"
     },
+    "bullet": {
+        "interior": "white", "outline": "black"
+    },
     "lives": {
         "interior": "red", "outline": "white"
     }
@@ -42,6 +50,7 @@ CONSTANTS = {
     "numStars": 20,
     "starOpacity": 0.15,
     "starSpeed": 5,
+    "bulletSpeed": 300,
     "padding": {
         "lives": {
             "x": 15, "y": 10
@@ -57,6 +66,8 @@ KEYS = {
 
     "rotateAnticlockwise": 38,   // Up arrow
     "rotateClockwise": 40,       // Down arrow
+
+    "shoot": 32,  // Space
 };
 
 /******************************************************************************/
@@ -90,6 +101,27 @@ var Utils = {
         )
 
         return overlapX && overlapY;
+    },
+
+    "drawBorderedCircle": function(ctx, x, y, radius, borderWidth, borderColour, interiorColour) {
+        var d = [
+            [radius, borderColour],
+            [radius - borderWidth, interiorColour]
+        ];
+        for (var i=0; i<d.length; i++) {
+            ctx.fillStyle = d[i][1];
+            ctx.beginPath();
+            ctx.arc(x, y, d[i][0], 0, 2 * Math.PI);
+            ctx.fill();
+        }
+    },
+
+    "removeItem": function(item, arr) {
+        var idx = arr.indexOf(item);
+        if (idx < 0) {
+            throw "Item not found in array";
+        }
+        arr.splice(idx, 1);
     }
 };
 
@@ -113,6 +145,8 @@ function Player(x, y) {
     // Rotation describes how many anti-cw 90 deg. turns the id 0 colour is from
     // the top triangle
     this.rotation = 0;
+
+    this.bullets = [];
 }
 
 Player.prototype.getFaceColour = function(faceNum) {
@@ -198,6 +232,13 @@ Player.prototype.getRotationCallback = function(direction) {
     return callback;
 }
 
+/*
+ * Create a new bullet at the center of the bottom edge of the player
+ */
+Player.prototype.shoot = function() {
+    this.bullets.push(new Bullet(this.x, this.y + this.size / 2));
+}
+
 /******************************************************************************/
 
 function Target(x, y, colour) {
@@ -270,16 +311,8 @@ function Bomb(x, y) {
 Bomb.prototype.draw = function(ctx) {
     // Draw outline by drawing border circle with full radius, and smaller circle
     // with interior colour
-    var d = [
-        [this.radius, COLOURS.bomb.outline],
-        [this.radius - SIZES.bomb.outlineWidth, COLOURS.bomb.interior]
-    ];
-    for (var i=0; i<d.length; i++) {
-        ctx.fillStyle = d[i][1];
-        ctx.beginPath();
-        ctx.arc(this.x, this.y, d[i][0], 0, 2 * Math.PI);
-        ctx.fill();
-    }
+    Utils.drawBorderedCircle(ctx, this.x, this.y, this.radius, SIZES.bomb.outlineWidth,
+                             COLOURS.bomb.outline, COLOURS.bomb.interior);
 }
 
 /*
@@ -300,6 +333,29 @@ Bomb.prototype.collidesWithPlayer = function(player) {
     );
 }
 
+/*
+ * Return true if the bomb collides with the given bullet, and false otherwis
+ */
+Bomb.prototype.collidesWithBullet = function(bullet) {
+    var dx = this.x - bullet.x;
+    var dy = this.y - bullet.y;
+    var dist = Math.sqrt(dx*dx + dy*dy);
+    return dist <= this.radius + bullet.radius;
+}
+
+/******************************************************************************/
+
+function Bullet(x, y) {
+    this.x = x;
+    this.y = y;
+    this.radius = SIZES.bullet.radius;
+}
+
+Bullet.prototype.draw = function(ctx) {
+    Utils.drawBorderedCircle(ctx, this.x, this.y, this.radius, SIZES.bullet.outlineWidth,
+                             COLOURS.bullet.outline, COLOURS.bullet.interior);
+}
+
 /******************************************************************************/
 
 function Game(canvas) {
@@ -314,7 +370,6 @@ function Game(canvas) {
         "targets": [], "bombs": []
     };
     this.stars = [];
-
     this.pressedKeys = {};
 
     // Queues to handle animations. Have several queues so that unrelated
@@ -356,6 +411,13 @@ Game.prototype.update = function(dt) {
         this.player.move(dt, dx, dy, this);
     }
 
+    // Handle shooting - start a timer if the key is held down and a timer doesn't
+    // already exist
+    if (KEYS.shoot in this.pressedKeys && !("shoot" in this.timers)) {
+        this.player.shoot();
+        this.timers["shoot"] = new Timer(TIMINGS.shootInterval, this.player.shoot.bind(this.player));
+    }
+
     // Scroll enemies
     var scrollAmount = this.scrollSpeed * dt;
     for (var type in this.enemies) {
@@ -368,6 +430,17 @@ Game.prototype.update = function(dt) {
                 this.enemies[type].splice(i, 1);
                 i--;
             }
+        }
+    }
+    // Advance bullets
+    var bulletScrollAmount = CONSTANTS.bulletSpeed * dt;
+    for (var i=0; i<this.player.bullets.length; i++) {
+        var bullet = this.player.bullets[i];
+        bullet.y += bulletScrollAmount;
+
+        if (bullet.y - bullet.radius >= this.height) {
+            Utils.removeItem(bullet, this.player.bullets);
+            i--;
         }
     }
 
@@ -389,7 +462,7 @@ Game.prototype.update = function(dt) {
         this.stars[t].update(dt);
     }
 
-    // Collision detection
+    // Collision detection - enemies with player
     for (var type in this.enemies) {
         for (var i=0; i<this.enemies[type].length; i++) {
             var e = this.enemies[type][i];
@@ -399,18 +472,35 @@ Game.prototype.update = function(dt) {
             }
         }
     }
+    // Bombs with bullets
+    for (var i=0; i<this.enemies["bombs"].length; i++) {
+        var bomb = this.enemies["bombs"][i];
+        for (var j=0; j<this.player.bullets.length; j++) {
+            var bullet = this.player.bullets[j];
+
+            if (bomb.collidesWithBullet(bullet)) {
+                Utils.removeItem(bullet, this.player.bullets);
+                Utils.removeItem(bomb, this.enemies["bombs"]);
+                i--;
+                break;
+            }
+        }
+    }
 
     // Drawing
     for (var i=0; i<this.stars.length; i++) {
         this.stars[i].draw(this.ctx);
     }
+    for (var i=0; i<this.player.bullets.length; i++) {
+        this.player.bullets[i].draw(this.ctx);
+    }
+    this.player.draw(this.ctx);
     for (var type in this.enemies) {
         for (var i=0; i<this.enemies[type].length; i++) {
             var e = this.enemies[type][i];
             e.draw(this.ctx);
         }
     }
-    this.player.draw(this.ctx);
 
     this.drawLives(this.ctx, this.player.lives);
 }
@@ -468,7 +558,7 @@ Game.prototype.handleEnemyCollision = function(enemy, type) {
         this.loseLife();
     }
 
-    this.enemies[type].splice(this.enemies[type].indexOf(enemy), 1);
+    Utils.removeItem(enemy, this.enemies[type]);
 }
 
 
@@ -493,6 +583,11 @@ Game.prototype.handleKeyDown = function(e) {
 
 Game.prototype.handleKeyUp = function(e) {
     delete this.pressedKeys[e.keyCode];
+
+    // Remove bullet-shooting timer
+    if (e.keyCode == KEYS.shoot) {
+        delete this.timers.shoot;
+    }
 }
 
 Game.prototype.gameOver = function(e) {
