@@ -514,7 +514,7 @@ Game.prototype.createEnemy = function() {
 
     var i = Math.floor(Math.random() * 2);
     var type = ["targets", "bombs"][i];
-    if (type == "target") {
+    if (type == "targets") {
         w = SIZES.target.width;
         h = SIZES.target.height;
     }
