@@ -32,7 +32,7 @@ SIZES = {
         "width": 15, "height": 30, "outlineWidth": 4
     },
     "score": {
-        "total": 30, "popup": 20
+        "total": 35, "popup": 25
     }
 };
 
@@ -67,7 +67,7 @@ CONSTANTS = {
         "target": 1,
         "bomb": 2
     },
-    "scoreFont": "Verdana",
+    "scoreFont": "Ranga",
     "lifeFlashes": 2,  // How many times to flash lives
 };
 
