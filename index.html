@@ -8,6 +8,42 @@
 
     <canvas id="game-canvas" width=800 height=600></canvas>
 
-    <script type="text/javascript" src="game.js"></script>
+
+    <script type="text/javascript" src="js/animation_handler.js"></script>
+    <script type="text/javascript" src="js/bomb.js"></script>
+    <script type="text/javascript" src="js/bullet.js"></script>
+    <script type="text/javascript" src="js/game.js"></script>
+    <script type="text/javascript" src="js/player.js"></script>
+    <script type="text/javascript" src="js/score_popup.js"></script>
+    <script type="text/javascript" src="js/settings.js"></script>
+    <script type="text/javascript" src="js/star.js"></script>
+    <script type="text/javascript" src="js/target.js"></script>
+    <script type="text/javascript" src="js/timer.js"></script>
+    <script type="text/javascript" src="js/utils.js"></script>
+    <script type="text/javascript">
+
+    var canvas = document.getElementById("game-canvas");
+    var game = new Game(canvas);
+
+    window.addEventListener("keydown", game.handleKeyDown.bind(game));
+    window.addEventListener("keyup", game.handleKeyUp.bind(game));
+
+    // Start game timer
+    var now = null;
+    var then = performance.now();
+    var mainLoop = window.setInterval(function() {
+        now = performance.now();
+        var dt = (now - then) / 1000;
+        then = now;
+
+        if (game.inProgress) {
+            game.update(dt);
+        }
+        else {
+            window.clearInterval(mainLoop);
+        }
+    }, 10);
+
+    </script>
 <body>
 </html>
