@@ -6,6 +6,7 @@ TIMINGS = {
     "starCreation": 2,
     // The minimum time between between firing bullets when holding shoot button
     "shootInterval": 0.2,
+    "scorePopup": 0.5,  // Amount of time the score popups are shown for
 };
 
 SIZES = {
@@ -24,6 +25,9 @@ SIZES = {
     },
     "lives": {
         "width": 15, "height": 30, "outlineWidth": 4
+    },
+    "score": {
+        "total": 30, "popup": 20
     }
 };
 
@@ -42,7 +46,8 @@ COLOURS = {
     },
     "lives": {
         "interior": "red", "outline": "white"
-    }
+    },
+    "score": "white",
 };
 
 CONSTANTS = {
@@ -51,11 +56,13 @@ CONSTANTS = {
     "starOpacity": 0.15,
     "starSpeed": 5,
     "bulletSpeed": 300,
-    "padding": {
-        "lives": {
-            "x": 15, "y": 10
-        }
-    }
+    "padding": 15,  // Padding to use between score/lives/etc and edges of canvas
+    // Number of points earned for defeating each type of enemy
+    "points": {
+        "target": 1,
+        "bomb": 2
+    },
+    "scoreFont": "Verdana",
 };
 
 KEYS = {
@@ -145,7 +152,7 @@ function Player(x, y) {
     // Rotation describes how many anti-cw 90 deg. turns the id 0 colour is from
     // the top triangle
     this.rotation = 0;
-
+    this.score = 0;
     this.bullets = [];
 }
 
@@ -386,6 +393,11 @@ function Game(canvas) {
     for (var i=0; i<CONSTANTS.numStars; i++) {
         this.createStar();
     }
+
+    this.ctx.textAlign = "right";
+    this.ctx.textBaseline = "top";
+
+    this.scorePopups = [];
 }
 
 Game.prototype.update = function(dt) {
@@ -479,9 +491,11 @@ Game.prototype.update = function(dt) {
             var bullet = this.player.bullets[j];
 
             if (bomb.collidesWithBullet(bullet)) {
+                this.increasePlayerScore(CONSTANTS.points.bomb, bullet.x, bullet.y);
                 Utils.removeItem(bullet, this.player.bullets);
                 Utils.removeItem(bomb, this.enemies["bombs"]);
                 i--;
+
                 break;
             }
         }
@@ -503,6 +517,23 @@ Game.prototype.update = function(dt) {
     }
 
     this.drawLives(this.ctx, this.player.lives);
+    // Draw score
+    this.ctx.font = SIZES.score.total + "px " + CONSTANTS.scoreFont;
+    this.ctx.fillStyle = COLOURS.score;
+    this.ctx.fillText(this.player.score, this.width - CONSTANTS.padding, CONSTANTS.padding);
+
+    // Draw score popups
+    this.ctx.fillStyle = COLOURS.score;
+    this.ctx.font = SIZES.score.popup + "px " + CONSTANTS.scoreFont;
+    for (var i=0; i<this.scorePopups.length; i++) {
+        var p = this.scorePopups[i];
+        p.draw(this.ctx);
+        p.update(dt);
+        if (p.isFinished()) {
+            Utils.removeItem(p, this.scorePopups);
+            i--;
+        }
+    }
 }
 
 /*
@@ -550,7 +581,10 @@ Game.prototype.handleEnemyCollision = function(enemy, type) {
     if (type == "targets") {
         var faceNum = enemy.getCollisionFace(this.player);
 
-        if (this.player.getFaceColour(faceNum) != enemy.colour) {
+        if (this.player.getFaceColour(faceNum) == enemy.colour) {
+            this.increasePlayerScore(CONSTANTS.points.target, enemy.x, enemy.y);
+        }
+        else {
             this.loseLife();
         }
     }
@@ -568,6 +602,14 @@ Game.prototype.loseLife = function() {
     if (this.player.lives == 0) {
         this.gameOver();
     }
+}
+
+/*
+ * Increase the player's score and create a new score popup at (hitX, hitY)
+ */
+Game.prototype.increasePlayerScore = function(n, hitX, hitY) {
+    this.player.score += n;
+    this.scorePopups.push(new ScorePopup(n, hitX, hitY));
 }
 
 Game.prototype.handleKeyDown = function(e) {
@@ -595,8 +637,8 @@ Game.prototype.gameOver = function(e) {
 }
 
 Game.prototype.drawLives = function(ctx, n) {
-    var x = CONSTANTS.padding.lives.x;
-    var y = CONSTANTS.padding.lives.y;
+    var x = CONSTANTS.padding;
+    var y = CONSTANTS.padding;
     for (var i=0; i<n; i++) {
         // Draw solid interior
         ctx.fillStyle = COLOURS.lives.interior;
@@ -609,8 +651,37 @@ Game.prototype.drawLives = function(ctx, n) {
         ctx.lineWidth = SIZES.lives.outlineWidth;
         ctx.strokeRect(x, y, w, h);
 
-        x += SIZES.lives.width + CONSTANTS.padding.lives.x;
+        x += SIZES.lives.width + CONSTANTS.padding;
     }
+}
+
+/******************************************************************************/
+
+/*
+ * Object to represent transient labels showing how many points just earned
+ */
+function ScorePopup(points, x, y) {
+    this.text = "+" + points;
+    this.x = x;
+    this.y = y;
+    this.alpha = 1;
+}
+
+ScorePopup.prototype.draw = function(ctx) {
+    ctx.globalAlpha = this.alpha;
+    ctx.fillText(this.text, this.x, this.y);
+    ctx.globalAlpha = 1;
+}
+
+/*
+ * Animate opacity of labels to fade out
+ */
+ScorePopup.prototype.update = function(dt) {
+    this.alpha -= dt / TIMINGS.scorePopup;
+}
+
+ScorePopup.prototype.isFinished = function() {
+    return this.alpha <= 0;
 }
 
 /******************************************************************************/
