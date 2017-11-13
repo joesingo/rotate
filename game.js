@@ -7,6 +7,7 @@ TIMINGS = {
     // The minimum time between between firing bullets when holding shoot button
     "shootInterval": 0.2,
     "scorePopup": 0.5,  // Amount of time the score popups are shown for
+    "lifeFlashes": 0.25,   // How long to flash lives for upon life loss
 };
 
 SIZES = {
@@ -67,6 +68,7 @@ CONSTANTS = {
         "bomb": 2
     },
     "scoreFont": "Verdana",
+    "lifeFlashes": 2,  // How many times to flash lives
 };
 
 KEYS = {
@@ -421,6 +423,7 @@ function Game(canvas) {
     this.animationHandlers = {};
     this.animationHandlers.playerRotations = new AnimationHandler();
     this.animationHandlers.targets = new AnimationHandler();
+    this.animationHandlers.lives = new AnimationHandler();
 
     this.timers = {};
 
@@ -435,6 +438,7 @@ function Game(canvas) {
     this.ctx.textBaseline = "top";
 
     this.scorePopups = [];
+    this.livesVisible = true;
 }
 
 Game.prototype.update = function(dt) {
@@ -552,7 +556,10 @@ Game.prototype.update = function(dt) {
         }
     }
 
-    this.drawLives(this.ctx, this.player.lives);
+    if (this.livesVisible) {
+        this.drawLives(this.ctx, this.player.lives);
+    }
+
     // Draw score
     this.ctx.font = SIZES.score.total + "px " + CONSTANTS.scoreFont;
     this.ctx.fillStyle = COLOURS.score;
@@ -637,6 +644,12 @@ Game.prototype.loseLife = function() {
 
     if (this.player.lives == 0) {
         this.gameOver();
+    }
+    else {
+        this.animationHandlers["lives"].addToQueue([function(t) {
+            // Split interval up into length-1 sections and alternate off/on
+            this.livesVisible = (Math.floor(t) % 2 == 1);
+        }.bind(this), 0, 2 * CONSTANTS.lifeFlashes - 1, TIMINGS.lifeFlashes]);
     }
 }
 
