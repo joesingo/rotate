@@ -11,7 +11,11 @@ TIMINGS = {
 
 SIZES = {
     "player": {
-        "size": 60, "outlineWidth": 3
+        "size": 60,
+        "outlineWidth": 3,
+        "gun": {
+            "width": 15, "height": 15
+        },
     },
     "target": {
         "width": 40, "height": 40
@@ -55,7 +59,7 @@ CONSTANTS = {
     "numStars": 20,
     "starOpacity": 0.15,
     "starSpeed": 5,
-    "bulletSpeed": 300,
+    "bulletSpeed": 500,
     "padding": 15,  // Padding to use between score/lives/etc and edges of canvas
     // Number of points earned for defeating each type of enemy
     "points": {
@@ -188,13 +192,27 @@ Player.prototype.draw = function(ctx) {
         ctx.fill();
     }
 
-    // Draw outline
-    ctx.strokeStyle = COLOURS.player.outline;
-    ctx.lineWidth = SIZES.player.outlineWidth;
+    // Rotate player and tranlate so player is at (0, 0)
     ctx.save();
     ctx.translate(this.x, this.y);
     ctx.rotate(-this.rotation * Math.PI / 2);
+
+    // Draw gun
+    var gunRectArgs = [
+        -SIZES.player.gun.width / 2,
+        this.size / 2,
+        SIZES.player.gun.width,
+        SIZES.player.gun.height
+    ];
+    ctx.fillStyle = COLOURS.player.colours[2];  // Use bottom face colour
+    ctx.fillRect.apply(ctx, gunRectArgs);
+
+    // Draw outlines
+    ctx.lineWidth = SIZES.player.outlineWidth;
+    ctx.strokeStyle = COLOURS.player.outline;
+    ctx.strokeRect.apply(ctx, gunRectArgs);
     ctx.strokeRect(-this.size / 2, -this.size / 2, this.size, this.size);
+
     ctx.restore();
 };
 
@@ -243,7 +261,15 @@ Player.prototype.getRotationCallback = function(direction) {
  * Create a new bullet at the center of the bottom edge of the player
  */
 Player.prototype.shoot = function() {
-    this.bullets.push(new Bullet(this.x, this.y + this.size / 2));
+    // Retoate angle to fire bullet at, starting from vector (0, 1)
+    var angle = -this.rotation * Math.PI / 2;
+    var u = -Math.sin(angle);
+    var v = Math.cos(angle)
+
+    this.bullets.push(new Bullet(
+        this.x + (u * this.size / 2), this.y + (v * this.size / 2),
+        u, v
+    ));
 }
 
 /******************************************************************************/
@@ -352,15 +378,26 @@ Bomb.prototype.collidesWithBullet = function(bullet) {
 
 /******************************************************************************/
 
-function Bullet(x, y) {
+/*
+ * A bullet fired by the player, starting at (x, y) in direction (u, v)
+ */
+function Bullet(x, y, u, v) {
     this.x = x;
     this.y = y;
+    this.u = u;
+    this.v = v;
     this.radius = SIZES.bullet.radius;
 }
 
 Bullet.prototype.draw = function(ctx) {
     Utils.drawBorderedCircle(ctx, this.x, this.y, this.radius, SIZES.bullet.outlineWidth,
                              COLOURS.bullet.outline, COLOURS.bullet.interior);
+}
+
+Bullet.prototype.move = function(dt) {
+    // Note: This relies on (u, v) being a unit vector
+    this.x += CONSTANTS.bulletSpeed * this.u * dt;
+    this.y += CONSTANTS.bulletSpeed * this.v * dt;
 }
 
 /******************************************************************************/
@@ -445,10 +482,9 @@ Game.prototype.update = function(dt) {
         }
     }
     // Advance bullets
-    var bulletScrollAmount = CONSTANTS.bulletSpeed * dt;
     for (var i=0; i<this.player.bullets.length; i++) {
         var bullet = this.player.bullets[i];
-        bullet.y += bulletScrollAmount;
+        bullet.move(dt);
 
         if (bullet.y - bullet.radius >= this.height) {
             Utils.removeItem(bullet, this.player.bullets);
