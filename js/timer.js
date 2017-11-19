@@ -1,11 +1,12 @@
 function Timer(interval, callback) {
-    this.timeLeft = interval;
+    this.interval = interval;
+    this.timeLeft = this.interval;
 
     this.update = function(dt) {
         this.timeLeft -= dt;
 
         if (this.timeLeft <= 0) {
-            this.timeLeft = interval;
+            this.timeLeft = this.interval;
             callback();
         }
     }

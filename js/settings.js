@@ -3,7 +3,6 @@ ANTI_CLOCKWISE = "anticlockwise";
 
 TIMINGS = {
     "rotationTime": 0.1,
-    "starCreation": 2,
     // The minimum time between between firing bullets when holding shoot button
     "shootInterval": 0.2,
     "scorePopup": 0.5,  // Amount of time the score popups are shown for
@@ -69,6 +68,11 @@ CONSTANTS = {
     },
     "scoreFont": "Ranga",
     "lifeFlashes": 2,  // How many times to flash lives
+    "enemyCreation": {
+        "initial": 2,
+        "min": 0.5,
+        "gradient": -0.1 / 20,  // Decrease by 0.1 every 20 seconds
+    },
 };
 
 KEYS = {

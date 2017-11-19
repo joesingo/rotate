@@ -21,8 +21,8 @@ function Game(canvas) {
 
     this.timers = {};
 
-    this.enemyCreationInterval = 1.5;
-    this.timers["enemies"] = new Timer(this.enemyCreationInterval, this.createEnemy.bind(this));
+    this.gameTime = 0;  // Seconds the game has been in progress for
+    this.timers["enemies"] = new Timer(this.getEnemyCreationInterval(), this.createEnemy.bind(this));
 
     for (var i=0; i<CONSTANTS.numStars; i++) {
         this.createStar();
@@ -36,6 +36,9 @@ function Game(canvas) {
 }
 
 Game.prototype.update = function(dt) {
+    this.gameTime += dt;
+    this.timers["enemies"].interval = this.getEnemyCreationInterval();
+
     this.ctx.fillStyle = COLOURS.background;
     this.ctx.fillRect(0, 0, this.width, this.height);
 
@@ -298,3 +301,12 @@ Game.prototype.drawLives = function(ctx, n) {
     }
 }
 
+/*
+ * Return the number of seconds between creating new enemies - used to change the timer interval
+ * as the game progresses
+ */
+Game.prototype.getEnemyCreationInterval = function() {
+    // Decrease interval time linearly until a min value
+    var c = CONSTANTS.enemyCreation;
+    return Math.max(c.initial + c.gradient * this.gameTime, c.min);
+}
