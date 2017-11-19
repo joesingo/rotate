@@ -1,7 +1,8 @@
-function Target(x, y, colour) {
+function Target(x, y, colour, speed) {
     this.x = x;
     this.y = y;
     this.colour = colour;
+    this.speed = speed;
 
     this.width = SIZES.target.width;
     this.height = SIZES.target.height;

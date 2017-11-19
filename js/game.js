@@ -4,7 +4,6 @@ function Game(canvas) {
     this.height = canvas.height;
     this.inProgress = true;
 
-    this.scrollSpeed = 70;
     this.player = new Player(300, 100);
     this.enemies = {
         "targets": [], "bombs": []
@@ -69,11 +68,10 @@ Game.prototype.update = function(dt) {
     }
 
     // Scroll enemies
-    var scrollAmount = this.scrollSpeed * dt;
     for (var type in this.enemies) {
         for (var i=0; i<this.enemies[type].length; i++) {
             var e = this.enemies[type][i];
-            e.y -= scrollAmount;
+            e.y -= e.speed * dt;
 
             if (e.getBottomYCoord() <= 0) {
                 this.loseLife();
@@ -195,15 +193,16 @@ Game.prototype.createEnemy = function() {
     }
 
     var y = this.height + h / 2;
-    var x = (w / 2) + Math.random() * (this.width - w);
+    var x = Utils.random(w / 2, this.width - w / 2);
+    var speed = Utils.random(CONSTANTS.enemySpeeds.min, CONSTANTS.enemySpeeds.max);
     var enemy = null;
 
     if (type == "targets") {
         var colour = COLOURS.player.colours[Math.floor(Math.random() * COLOURS.player.colours.length)];
-        enemy = new Target(x, y, colour);
+        enemy = new Target(x, y, colour, speed);
     }
     else if (type == "bombs") {
-        enemy = new Bomb(x, y);
+        enemy = new Bomb(x, y, speed);
     }
     this.enemies[type].push(enemy);
 }

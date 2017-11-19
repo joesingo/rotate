@@ -1,7 +1,8 @@
-function Bomb(x, y) {
+function Bomb(x, y, speed) {
     this.x = x;
     this.y = y;
     this.radius = SIZES.bomb.radius
+    this.speed = speed;
 }
 
 Bomb.prototype.draw = function(ctx) {

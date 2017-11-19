@@ -71,7 +71,10 @@ CONSTANTS = {
     "enemyCreation": {
         "initial": 2,
         "min": 0.5,
-        "gradient": -0.1 / 20,  // Decrease by 0.1 every 20 seconds
+        "gradient": -0.1 / 15,  // Decrease by 0.1 every 15 seconds
+    },
+    "enemySpeeds": {
+        "min": 45, "max": 120
     },
 };
 

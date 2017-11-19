@@ -48,6 +48,17 @@ var Utils = {
             throw "Item not found in array";
         }
         arr.splice(idx, 1);
+    },
+
+    /*
+     * Return a random number in [min, max)
+     */
+    "random": function(min, max) {
+        if (min > max) {
+            throw "Max must be greater than min";
+        }
+        var r = Math.random();
+        return (max - min) * r + min;
     }
 };
 
