@@ -4,7 +4,7 @@ function Game(canvas) {
     this.height = canvas.height;
     this.inProgress = true;
 
-    this.player = new Player(300, 100);
+    this.player = new Player(this.width / 2, 100);
     this.enemies = {
         "targets": [], "bombs": []
     };
@@ -32,6 +32,26 @@ function Game(canvas) {
 
     this.scorePopups = [];
     this.livesVisible = true;
+}
+
+/*
+ * Start timer for main game loop
+ */
+Game.prototype.start = function() {
+    var now = null;
+    var then = performance.now();
+    var mainLoop = window.setInterval(function() {
+        now = performance.now();
+        var dt = (now - then) / 1000;
+        then = now;
+
+        if (this.inProgress) {
+            this.update(dt);
+        }
+        else {
+            window.clearInterval(mainLoop);
+        }
+    }.bind(this), 10);
 }
 
 Game.prototype.update = function(dt) {

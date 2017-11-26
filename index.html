@@ -3,9 +3,24 @@
 <head>
     <title>Rotate</title>
     <link href="https://fonts.googleapis.com/css?family=Ranga" rel="stylesheet">
+    <link href="style.css" rel="stylesheet">
 </head>
 
 <body>
+    <div id="help-text">
+        <h1>Rotate</h1>
+        <p>
+            You control a multi-coloured square - move with <span class="key">WASD</span>,
+            rotate with arrow keys and shoot with <span class="key">Space</span>.
+        </p>
+        <ul>
+            <li>Rotate to match the colour of the coloured squares and crash into them</li>
+            <li>Shoot the black bombs</li>
+            <li>Don't let anything touch the top of the screen</li>
+            <li>Your lives are shown in the top left, and points in the top right</li>
+        </ul>
+        <p><button id="play-button" onclick="startGame()">Play</button></p>
+    </div>
 
     <canvas id="game-canvas" width=800 height=600></canvas>
 
@@ -22,28 +37,20 @@
     <script type="text/javascript" src="js/utils.js"></script>
     <script type="text/javascript">
 
+    function startGame() {
+        document.getElementById("help-text").style.display = "none";
+        game.start();
+    }
+
     var canvas = document.getElementById("game-canvas");
     var game = new Game(canvas);
+    // Draw first frame to just to show something in the background whilst help text is displayed
+    game.update(0);
 
     window.addEventListener("keydown", game.handleKeyDown.bind(game));
     window.addEventListener("keyup", game.handleKeyUp.bind(game));
 
-    // Start game timer
-    var now = null;
-    var then = performance.now();
-    var mainLoop = window.setInterval(function() {
-        now = performance.now();
-        var dt = (now - then) / 1000;
-        then = now;
-
-        if (game.inProgress) {
-            game.update(dt);
-        }
-        else {
-            window.clearInterval(mainLoop);
-        }
-    }, 10);
-
+    document.getElementById("play-button").focus();
     </script>
-<body>
+</body>
 </html>
