@@ -1,8 +1,15 @@
-function Game(canvas) {
+/*
+ * Object to store game state and orchestrate gameplay
+ *
+ * `endGameCallback` is a callback function that will be called when the game
+ * ends
+ */
+function Game(canvas, endGameCallback) {
     this.ctx = canvas.getContext("2d");
     this.width = canvas.width;
     this.height = canvas.height;
     this.inProgress = true;
+    this.endGameCallback = endGameCallback;
 
     this.player = new Player(this.width / 2, 100);
     this.enemies = {
@@ -299,6 +306,7 @@ Game.prototype.handleKeyUp = function(e) {
 
 Game.prototype.gameOver = function(e) {
     this.inProgress = false;
+    this.endGameCallback();
 }
 
 Game.prototype.drawLives = function(ctx, n) {

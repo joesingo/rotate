@@ -2,7 +2,7 @@
     box-sizing: border-box;
 }
 
-#help-text {
+.popup {
     position: absolute;
     top: 100px;
     left: 50%;
@@ -18,26 +18,26 @@
     font-size: 20px;
 }
 
-#help-text li {
-    margin-bottom: 10px;
+/* p containing play button */
+.popup p:last-child {
+    text-align: center;
 }
 
-#help-text button, #help-text h1 {
+.popup button, .popup h2 {
     font-family: "Ranga", "Verdana", sans-serif;
 }
 
-#help-text button {
+.popup button {
     padding: 10px;
     font-size: 1.1em;
 }
 
-/* p containing play button */
-#help-text p:last-child {
+.popup h2 {
     text-align: center;
 }
 
-h1 {
-    text-align: center;
+#help-text li {
+    margin-bottom: 10px;
 }
 
 canvas {
@@ -49,4 +49,9 @@ canvas {
     background: gray;
     font-family: "Courier New", monospace;
     padding: 0 4px;
+}
+
+#end-game-popup {
+    display: none;
+    text-align: center;
 }

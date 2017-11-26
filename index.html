@@ -7,8 +7,8 @@
 </head>
 
 <body>
-    <div id="help-text">
-        <h1>Rotate</h1>
+    <div class="popup" id="help-text">
+        <h2>Rotate</h2>
         <p>
             You control a multi-coloured square - move with <span class="key">WASD</span>,
             rotate with arrow keys and shoot with <span class="key">Space</span>.
@@ -20,6 +20,12 @@
             <li>Your lives are shown in the top left, and points in the top right</li>
         </ul>
         <p><button id="play-button" onclick="startGame()">Play</button></p>
+    </div>
+
+    <div class="popup" id="end-game-popup">
+        <h2>Game Over</h2>
+        <p>You scored <span></span> points</p>
+        <p><button id="replay-button" onclick="startGame()">Play again</button>
     </div>
 
     <canvas id="game-canvas" width=800 height=600></canvas>
@@ -37,18 +43,40 @@
     <script type="text/javascript" src="js/utils.js"></script>
     <script type="text/javascript">
 
+    function createGame() {
+        var g = new Game(canvas, endGame);
+        window.addEventListener("keydown", g.handleKeyDown.bind(g));
+        window.addEventListener("keyup", g.handleKeyUp.bind(g));
+        return g;
+    }
+
+    /*
+     * Hide help/end game popup and start the game
+     */
     function startGame() {
-        document.getElementById("help-text").style.display = "none";
+        var popupIDs = ["help-text", "end-game-popup"];
+        for (var i=0; i<popupIDs.length; i++) {
+            document.getElementById(popupIDs[i]).style.display = "none";
+        }
         game.start();
     }
 
+    /*
+     * Show end game popup and reset game object
+     */
+    function endGame() {
+        var endGamePopup = document.getElementById("end-game-popup");
+        endGamePopup.getElementsByTagName("span")[0].innerHTML = game.player.score;
+        endGamePopup.style.display = "block";
+        document.getElementById("replay-button").focus();
+        game = createGame();
+    }
+
     var canvas = document.getElementById("game-canvas");
-    var game = new Game(canvas);
+    var game = createGame();
     // Draw first frame to just to show something in the background whilst help text is displayed
     game.update(0);
 
-    window.addEventListener("keydown", game.handleKeyDown.bind(game));
-    window.addEventListener("keyup", game.handleKeyUp.bind(game));
 
     document.getElementById("play-button").focus();
     </script>
