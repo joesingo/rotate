@@ -37,7 +37,8 @@ function Game(canvas, endGameCallback) {
     this.ctx.textAlign = "right";
     this.ctx.textBaseline = "top";
 
-    this.scorePopups = [];
+    this.expirables = {};
+    this.expirables.scorePopups = [];
     this.livesVisible = true;
 }
 
@@ -136,6 +137,18 @@ Game.prototype.update = function(dt) {
         this.stars[t].update(dt);
     }
 
+    // Update expirables
+    for (var type in this.expirables) {
+        for (var i=0; i<this.expirables[type].length; i++) {
+            var e = this.expirables[type][i];
+            e.update(dt);
+            if (e.isFinished()) {
+                Utils.removeItem(e, this.expirables[type]);
+                i--;
+            }
+        }
+    }
+
     // Collision detection - enemies with player
     for (var type in this.enemies) {
         for (var i=0; i<this.enemies[type].length; i++) {
@@ -190,14 +203,9 @@ Game.prototype.update = function(dt) {
     // Draw score popups
     this.ctx.fillStyle = COLOURS.score;
     this.ctx.font = SIZES.score.popup + "px " + CONSTANTS.scoreFont;
-    for (var i=0; i<this.scorePopups.length; i++) {
-        var p = this.scorePopups[i];
+    for (var i=0; i<this.expirables.scorePopups.length; i++) {
+        var p = this.expirables.scorePopups[i];
         p.draw(this.ctx);
-        p.update(dt);
-        if (p.isFinished()) {
-            Utils.removeItem(p, this.scorePopups);
-            i--;
-        }
     }
 }
 
@@ -281,7 +289,7 @@ Game.prototype.loseLife = function() {
  */
 Game.prototype.increasePlayerScore = function(n, hitX, hitY) {
     this.player.score += n;
-    this.scorePopups.push(new ScorePopup(n, hitX, hitY));
+    this.expirables.scorePopups.push(new ScorePopup(n, hitX, hitY));
 }
 
 Game.prototype.handleKeyDown = function(e) {
