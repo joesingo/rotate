@@ -5,14 +5,20 @@ TIMINGS = {
     "rotationTime": 0.1,
     // The minimum time between between firing bullets when holding shoot button
     "shootInterval": 0.2,
-    "scorePopup": 0.5,  // Amount of time the score popups are shown for
-    "lifeFlashes": 0.25,   // How long to flash lives for upon life loss
+    "scorePopup": 0.5,    // Amount of time the score popups are shown for
+    "lifeFlashes": 0.25,  // How long to flash lives for upon life loss
+    "powerups": {
+        "speedBoost": 5,  // How long the speed boost lasts for
+    },
+    "dropItems": 7,       // How long drop items last until expiring
 };
 
 SIZES = {
     "player": {
         "size": 60,
-        "outlineWidth": 3,
+        "outlineWidth": {
+            "normal": 3, "speedBoost": 5
+        },
         "gun": {
             "width": 15, "height": 15
         },
@@ -27,18 +33,20 @@ SIZES = {
     "bullet": {
         "radius": 5, "outlineWidth": 2
     },
-    "lives": {
-        "width": 15, "height": 30, "outlineWidth": 4
+    "drops": {
+        "width": 20, "height": 30, "outlineWidth": 4
     },
     "score": {
         "total": 35, "popup": 25
-    }
+    },
 };
 
 COLOURS = {
     "player": {
         "colours": ["red", "green", "blue", "orange"],
-        "outline": "white"
+        "outline": {
+            "normal": "white", "speedBoost": "cornflowerblue"
+        },
     },
     "background": "#333",
     "star": "white",
@@ -48,10 +56,12 @@ COLOURS = {
     "bullet": {
         "interior": "white", "outline": "black"
     },
-    "lives": {
-        "interior": "red", "outline": "white"
-    },
     "score": "white",
+    "drops": {
+        "outline": "white",
+        "life": "red",
+        "speedBoost": "cornflowerblue",
+    },
 };
 
 CONSTANTS = {
@@ -75,6 +85,13 @@ CONSTANTS = {
     },
     "enemySpeeds": {
         "min": 45, "max": 120
+    },
+    "playerSpeeds": {
+        "normal": 350, "boost": 600
+    },
+    "powerups": {
+        "probability": 0.03,  // The probability that a powerup will spawn when an enemy is created
+        "flashes": 2,         // The number of times to flash per second
     },
 };
 

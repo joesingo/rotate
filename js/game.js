@@ -1,3 +1,9 @@
+// Enumeration of types of powerup
+var POWERUP_TYPES = {
+    "LIFE": "life",
+    "SPEED_BOOST": "speedBoost"
+};
+
 /*
  * Object to store game state and orchestrate gameplay
  *
@@ -39,6 +45,11 @@ function Game(canvas, endGameCallback) {
 
     this.expirables = {};
     this.expirables.scorePopups = [];
+
+    // The items that the player can collect to activate a powerup
+    this.expirables.dropItems = [];
+    // The actual powerups, for time-based powerups
+    this.expirables.powerups = [];
     this.livesVisible = true;
 }
 
@@ -143,6 +154,7 @@ Game.prototype.update = function(dt) {
             var e = this.expirables[type][i];
             e.update(dt);
             if (e.isFinished()) {
+                e.expire();
                 Utils.removeItem(e, this.expirables[type]);
                 i--;
             }
@@ -175,10 +187,23 @@ Game.prototype.update = function(dt) {
             }
         }
     }
+    // Drop items with player
+    for (var i=0; i<this.expirables.dropItems.length; i++) {
+        var item = this.expirables.dropItems[i];
+        if (item.collidesWithPlayer(this.player)) {
+            this.addPowerup(item.type);
+            Utils.removeItem(item, this.expirables.dropItems);
+            i--;
+            break;
+        }
+    }
 
     // Drawing
     for (var i=0; i<this.stars.length; i++) {
         this.stars[i].draw(this.ctx);
+    }
+    for (var i=0; i<this.expirables.dropItems.length; i++) {
+        this.expirables.dropItems[i].draw(this.ctx);
     }
     for (var i=0; i<this.player.bullets.length; i++) {
         this.player.bullets[i].draw(this.ctx);
@@ -210,7 +235,8 @@ Game.prototype.update = function(dt) {
 }
 
 /*
- * Create an enemy - either a target or a bomb
+ * Create an enemy - either a target or a bomb. Has a random chance of spawning a drop item for a
+ * powerup
  */
 Game.prototype.createEnemy = function() {
     var w = null;
@@ -240,6 +266,17 @@ Game.prototype.createEnemy = function() {
         enemy = new Bomb(x, y, speed);
     }
     this.enemies[type].push(enemy);
+
+    if (Math.random() < CONSTANTS.powerups.probability) {
+        var types = Object.values(POWERUP_TYPES);
+        if (this.player.hasMaxLives()) {
+            Utils.removeItem(POWERUP_TYPES.LIFE, types);
+        }
+        var type = types[Math.floor(Math.random() * types.length)];
+        var x = Utils.random(SIZES.drops.width / 2, this.width - SIZES.drops.width / 2);
+        var y = Utils.random(SIZES.drops.height / 2, this.height - SIZES.drops.height / 2);
+        this.expirables.dropItems.push(new DropItem(x, y, type));
+    }
 }
 
 Game.prototype.createStar = function() {
@@ -318,21 +355,11 @@ Game.prototype.gameOver = function(e) {
 }
 
 Game.prototype.drawLives = function(ctx, n) {
-    var x = CONSTANTS.padding;
-    var y = CONSTANTS.padding;
+    var x = CONSTANTS.padding + SIZES.drops.width / 2;
+    var y = CONSTANTS.padding + SIZES.drops.height / 2;
     for (var i=0; i<n; i++) {
-        // Draw solid interior
-        ctx.fillStyle = COLOURS.lives.interior;
-        var w = SIZES.lives.width;
-        var h = SIZES.lives.height;
-        ctx.fillRect(x, y, w, h);
-
-        // Draw outline
-        ctx.strokeStyle =  COLOURS.lives.outline;
-        ctx.lineWidth = SIZES.lives.outlineWidth;
-        ctx.strokeRect(x, y, w, h);
-
-        x += SIZES.lives.width + CONSTANTS.padding;
+        DropItem.draw(ctx, POWERUP_TYPES.LIFE, x, y);
+        x += SIZES.drops.width + CONSTANTS.padding;
     }
 }
 
@@ -344,4 +371,27 @@ Game.prototype.getEnemyCreationInterval = function() {
     // Decrease interval time linearly until a min value
     var c = CONSTANTS.enemyCreation;
     return Math.max(c.initial + c.gradient * this.gameTime, c.min);
+}
+
+/*
+ * Consume a powerup
+ */
+Game.prototype.addPowerup = function(type) {
+    switch (type) {
+        case POWERUP_TYPES.LIFE:
+            if (!this.player.hasMaxLives()) {
+                this.player.lives++;
+            }
+            break;
+
+        case POWERUP_TYPES.SPEED_BOOST:
+            this.player.speedBoost = true;
+            var p = new Expirable(TIMINGS.powerups.speedBoost);
+            p.expire = function() {
+                this.player.speedBoost = false;
+            }.bind(this);
+
+            this.expirables.powerups.push(p);
+            break;
+    }
 }

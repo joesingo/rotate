@@ -14,3 +14,8 @@ Expirable.prototype.isFinished = function(dt) {
     return this.timeRemaining <= 0;
 }
 
+/*
+ * Callback to call when this object expires. Defaults to doing nothing
+ */
+Expirable.prototype.expire = function() {}
+

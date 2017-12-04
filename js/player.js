@@ -12,12 +12,17 @@ function Player(x, y) {
     this.size = SIZES.player.size;
 
     this.lives = CONSTANTS.startingLives;
-    this.speed = 350;
+    this.speed = CONSTANTS.playerSpeeds.normal;
     // Rotation describes how many anti-cw 90 deg. turns the id 0 colour is from
     // the top triangle
     this.rotation = 0;
     this.score = 0;
     this.bullets = [];
+    this.speedBoost = false;
+}
+
+Player.prototype.hasMaxLives = function() {
+    return this.lives == CONSTANTS.startingLives;
 }
 
 Player.prototype.getFaceColour = function(faceNum) {
@@ -28,7 +33,7 @@ Player.prototype.getFaceColour = function(faceNum) {
 
 
 Player.prototype.draw = function(ctx) {
-    // Points for the top triangle centered at the origin. These points will
+    // Points for the top triangle centred at the origin. These points will
     // be rotated to draw other triangles
     var points = [
         [0, 0],
@@ -52,7 +57,7 @@ Player.prototype.draw = function(ctx) {
         ctx.fill();
     }
 
-    // Rotate player and tranlate so player is at (0, 0)
+    // Rotate player and translate so player is at (0, 0)
     ctx.save();
     ctx.translate(this.x, this.y);
     ctx.rotate(-this.rotation * Math.PI / 2);
@@ -68,10 +73,17 @@ Player.prototype.draw = function(ctx) {
     ctx.fillRect.apply(ctx, gunRectArgs);
 
     // Draw outlines
-    ctx.lineWidth = SIZES.player.outlineWidth;
-    ctx.strokeStyle = COLOURS.player.outline;
+    var w = SIZES.player.outlineWidth;
+    var c = COLOURS.player.outline;
+    ctx.lineWidth = (this.speedBoost ? w.speedBoost : w.normal);
+    ctx.strokeStyle = (this.speedBoost ? c.speedBoost : c.normal);
     ctx.strokeRect.apply(ctx, gunRectArgs);
-    ctx.strokeRect(-this.size / 2, -this.size / 2, this.size, this.size);
+    ctx.strokeRect(
+        -this.size / 2 + ctx.lineWidth / 2,
+        -this.size / 2 + ctx.lineWidth / 2,
+        this.size - ctx.lineWidth,
+        this.size - ctx.lineWidth
+    );
 
     ctx.restore();
 };
@@ -80,7 +92,9 @@ Player.prototype.draw = function(ctx) {
  * Move the player in the direction [dx, dy]
  */
 Player.prototype.move = function(dt, dx, dy, game) {
-    var dist = this.speed * dt;
+    var speed = (this.speedBoost ? CONSTANTS.playerSpeeds.boost : this.speed);
+
+    var dist = speed * dt;
     // Normalise the vector [dx, dy] and then scale by distance to travel
     // in this frame
     var mag = Math.sqrt(dx*dx + dy*dy);
