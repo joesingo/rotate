@@ -87,7 +87,7 @@ CONSTANTS = {
         "normal": 350, "boost": 600
     },
     "powerups": {
-        "probability": 1,  // The probability that a powerup will spawn when an enemy is created
+        "probability": 0.03,  // The probability that a powerup will spawn when an enemy is created
         "flashes": 2,         // The number of times to flash per second
     },
 };
