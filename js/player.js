@@ -18,7 +18,7 @@ function Player(x, y) {
     this.rotation = 0;
     this.score = 0;
     this.bullets = [];
-    this.speedBoost = false;
+    this.powerups = {};
 }
 
 Player.prototype.hasMaxLives = function() {
@@ -62,22 +62,36 @@ Player.prototype.draw = function(ctx) {
     ctx.translate(this.x, this.y);
     ctx.rotate(-this.rotation * Math.PI / 2);
 
-    // Draw gun
-    var gunRectArgs = [
-        -SIZES.player.gun.width / 2,
-        this.size / 2,
-        SIZES.player.gun.width,
-        SIZES.player.gun.height
-    ];
-    ctx.fillStyle = COLOURS.player.colours[2];  // Use bottom face colour
-    ctx.fillRect.apply(ctx, gunRectArgs);
-
-    // Draw outlines
+    // Set outline width and colour depending on whether powerup is active
     var w = SIZES.player.outlineWidth;
-    var c = COLOURS.player.outline;
-    ctx.lineWidth = (this.speedBoost ? w.speedBoost : w.normal);
-    ctx.strokeStyle = (this.speedBoost ? c.speedBoost : c.normal);
-    ctx.strokeRect.apply(ctx, gunRectArgs);
+    var ps = Object.keys(this.powerups);
+    ctx.strokeStyle = (ps.length > 0 ? COLOURS.drops[ps[ps.length - 1]] : COLOURS.player.outline);
+    ctx.lineWidth = (ps.length > 0 ? w.powerup : w.normal);
+
+    // Fill and stroke gun(s)
+    var gunAngles = [0];
+    if (POWERUP_TYPES.MULTI_GUN in this.powerups) {
+        gunAngles.push(Math.PI / 2, Math.PI, 3 * Math.PI / 2);
+    }
+    for (var i=0; i<gunAngles.length; i++) {
+        ctx.save();
+        // Translate to centre of edge gun will be on by rotating [0, 1]
+        ctx.translate(this.size / 2 * -Math.sin(gunAngles[i]), this.size / 2 * Math.cos(gunAngles[i]));
+        ctx.rotate(gunAngles[i]);
+        // Draw 'downwards' facing gun
+        var rectArgs = [
+            -SIZES.player.gun.width / 2, 0, SIZES.player.gun.width, SIZES.player.gun.height
+        ];
+
+        // i==0 corresponds to bottom colour, i.e. colour 2
+        ctx.fillStyle = COLOURS.player.colours[(2 - i) % 4];
+
+        ctx.fillRect.apply(ctx, rectArgs);
+        ctx.strokeRect.apply(ctx, rectArgs);
+        ctx.restore();
+    }
+
+    // Stroke player outline
     ctx.strokeRect(
         -this.size / 2 + ctx.lineWidth / 2,
         -this.size / 2 + ctx.lineWidth / 2,
@@ -92,7 +106,8 @@ Player.prototype.draw = function(ctx) {
  * Move the player in the direction [dx, dy]
  */
 Player.prototype.move = function(dt, dx, dy, game) {
-    var speed = (this.speedBoost ? CONSTANTS.playerSpeeds.boost : this.speed);
+    var speed = (POWERUP_TYPES.SPEED_BOOST in this.powerups ?
+                 CONSTANTS.playerSpeeds.boost : this.speed);
 
     var dist = speed * dt;
     // Normalise the vector [dx, dy] and then scale by distance to travel
@@ -135,14 +150,23 @@ Player.prototype.getRotationCallback = function(direction) {
  * Create a new bullet at the center of the bottom edge of the player
  */
 Player.prototype.shoot = function() {
-    // Retoate angle to fire bullet at, starting from vector (0, 1)
+    // Rotate angle to fire bullet at, starting from vector (0, 1)
     var angle = -this.rotation * Math.PI / 2;
-    var u = -Math.sin(angle);
-    var v = Math.cos(angle)
 
-    this.bullets.push(new Bullet(
-        this.x + (u * this.size / 2), this.y + (v * this.size / 2),
-        u, v
-    ));
+    var angles = [angle];
+    if (POWERUP_TYPES.MULTI_GUN in this.powerups) {
+        for (var i=1; i<=3; i++) {
+            angles.push(angle + i * Math.PI / 2);
+        }
+    }
+
+    for (var i=0; i<angles.length; i++) {
+        var u = -Math.sin(angles[i]);
+        var v = Math.cos(angles[i])
+
+        this.bullets.push(new Bullet(
+            this.x + (u * this.size / 2), this.y + (v * this.size / 2),
+            u, v
+        ));
+    }
 }
-

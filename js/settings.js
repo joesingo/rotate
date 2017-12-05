@@ -7,9 +7,7 @@ TIMINGS = {
     "shootInterval": 0.2,
     "scorePopup": 0.5,    // Amount of time the score popups are shown for
     "lifeFlashes": 0.25,  // How long to flash lives for upon life loss
-    "powerups": {
-        "speedBoost": 5,  // How long the speed boost lasts for
-    },
+    "powerups": 5,        // How long time-based powerups last for
     "dropItems": 7,       // How long drop items last until expiring
 };
 
@@ -17,7 +15,7 @@ SIZES = {
     "player": {
         "size": 60,
         "outlineWidth": {
-            "normal": 3, "speedBoost": 5
+            "normal": 3, "powerup": 5
         },
         "gun": {
             "width": 15, "height": 15
@@ -44,9 +42,7 @@ SIZES = {
 COLOURS = {
     "player": {
         "colours": ["red", "green", "blue", "orange"],
-        "outline": {
-            "normal": "white", "speedBoost": "cornflowerblue"
-        },
+        "outline": "white",
     },
     "background": "#333",
     "star": "white",
@@ -61,6 +57,7 @@ COLOURS = {
         "outline": "white",
         "life": "red",
         "speedBoost": "cornflowerblue",
+        "multiGun": "limegreen",
     },
 };
 
@@ -90,7 +87,7 @@ CONSTANTS = {
         "normal": 350, "boost": 600
     },
     "powerups": {
-        "probability": 0.03,  // The probability that a powerup will spawn when an enemy is created
+        "probability": 1,  // The probability that a powerup will spawn when an enemy is created
         "flashes": 2,         // The number of times to flash per second
     },
 };

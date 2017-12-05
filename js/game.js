@@ -1,7 +1,8 @@
 // Enumeration of types of powerup
 var POWERUP_TYPES = {
     "LIFE": "life",
-    "SPEED_BOOST": "speedBoost"
+    "SPEED_BOOST": "speedBoost",
+    "MULTI_GUN": "multiGun",
 };
 
 /*
@@ -377,21 +378,15 @@ Game.prototype.getEnemyCreationInterval = function() {
  * Consume a powerup
  */
 Game.prototype.addPowerup = function(type) {
-    switch (type) {
-        case POWERUP_TYPES.LIFE:
-            if (!this.player.hasMaxLives()) {
-                this.player.lives++;
-            }
-            break;
-
-        case POWERUP_TYPES.SPEED_BOOST:
-            this.player.speedBoost = true;
-            var p = new Expirable(TIMINGS.powerups.speedBoost);
-            p.expire = function() {
-                this.player.speedBoost = false;
-            }.bind(this);
-
-            this.expirables.powerups.push(p);
-            break;
+    if (type == POWERUP_TYPES.LIFE && !this.player.hasMaxLives()) {
+        this.player.lives++;
+        return;
     }
+
+    this.player.powerups[type] = true;
+    var p = new Expirable(TIMINGS.powerups);
+    p.expire = function() {
+        delete this.player.powerups[type];
+    }.bind(this);
+    this.expirables.powerups.push(p);
 }
