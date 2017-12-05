@@ -8,8 +8,12 @@ function Target(x, y, colour, speed) {
     this.height = SIZES.target.height;
 }
 
-Target.prototype.draw = function(ctx) {
-    ctx.fillStyle = this.colour;
+/*
+ * Draw the target. `anyColourPowerup` is true is any-colour powerup is currently active, since
+ * then the target is not drawn in its true colour
+ */
+Target.prototype.draw = function(ctx, anyColourPowerup) {
+    ctx.fillStyle = (anyColourPowerup ? COLOURS.drops.anyColour : this.colour);
     ctx.fillRect(this.x - this.width / 2, this.y - this.height / 2, this.width,
                  this.height);
     // Use same colour and width as player outline

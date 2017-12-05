@@ -3,6 +3,7 @@ var POWERUP_TYPES = {
     "LIFE": "life",
     "SPEED_BOOST": "speedBoost",
     "MULTI_GUN": "multiGun",
+    "ANY_COLOUR": "anyColour",
 };
 
 /*
@@ -213,7 +214,13 @@ Game.prototype.update = function(dt) {
     for (var type in this.enemies) {
         for (var i=0; i<this.enemies[type].length; i++) {
             var e = this.enemies[type][i];
-            e.draw(this.ctx);
+
+            var args = [this.ctx];
+            // If drawing targets then need to know whether any-colour powerup is active
+            if (type == "targets") {
+                args.push(POWERUP_TYPES.ANY_COLOUR in this.player.powerups);
+            }
+            e.draw.apply(e, args);
         }
     }
 
@@ -293,7 +300,9 @@ Game.prototype.handleEnemyCollision = function(enemy, type) {
     if (type == "targets") {
         var faceNum = enemy.getCollisionFace(this.player);
 
-        if (this.player.getFaceColour(faceNum) == enemy.colour) {
+        if (POWERUP_TYPES.ANY_COLOUR in this.player.powerups ||
+            this.player.getFaceColour(faceNum) == enemy.colour)
+        {
             this.increasePlayerScore(CONSTANTS.points.target, enemy.x, enemy.y);
         }
         else {

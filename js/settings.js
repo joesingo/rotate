@@ -58,6 +58,7 @@ COLOURS = {
         "life": "red",
         "speedBoost": "cornflowerblue",
         "multiGun": "limegreen",
+        "anyColour": "purple",
     },
 };
 

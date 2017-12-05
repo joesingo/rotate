@@ -33,28 +33,34 @@ Player.prototype.getFaceColour = function(faceNum) {
 
 
 Player.prototype.draw = function(ctx) {
-    // Points for the top triangle centred at the origin. These points will
-    // be rotated to draw other triangles
-    var points = [
-        [0, 0],
-        [-this.size / 2, -this.size / 2],
-        [this.size / 2, - this.size / 2]
-    ];
+    if (POWERUP_TYPES.ANY_COLOUR in this.powerups) {
+        ctx.fillStyle = COLOURS.drops.anyColour;
+        ctx.fillRect(this.x - this.size / 2, this.y - this.size / 2, this.size, this.size);
+    }
+    else {
+        // Points for the top triangle centred at the origin. These points will
+        // be rotated to draw other triangles
+        var points = [
+            [0, 0],
+            [-this.size / 2, -this.size / 2],
+            [this.size / 2, - this.size / 2]
+        ];
 
-    for (var i=0; i<4; i++) {
-        var angle = (i + this.rotation) * Math.PI / 2;
+        for (var i=0; i<4; i++) {
+            var angle = (i + this.rotation) * Math.PI / 2;
 
-        ctx.fillStyle = COLOURS.player.colours[i];
-        ctx.beginPath();
-        for (var j=0; j<points.length; j++) {
-            // We have -y in place in y in the usual formula since +ve y direction is downwards
-            // in canvas coordinates
-            var px = Math.cos(angle) * points[j][0] + Math.sin(angle) * points[j][1];
-            var py = Math.sin(angle) * points[j][0] - Math.cos(angle) * points[j][1];
-            ctx.lineTo(this.x + px, this.y - py);
+            ctx.fillStyle = COLOURS.player.colours[i];
+            ctx.beginPath();
+            for (var j=0; j<points.length; j++) {
+                // We have -y in place in y in the usual formula since +ve y direction is downwards
+                // in canvas coordinates
+                var px = Math.cos(angle) * points[j][0] + Math.sin(angle) * points[j][1];
+                var py = Math.sin(angle) * points[j][0] - Math.cos(angle) * points[j][1];
+                ctx.lineTo(this.x + px, this.y - py);
 
+            }
+            ctx.fill();
         }
-        ctx.fill();
     }
 
     // Rotate player and translate so player is at (0, 0)
@@ -67,6 +73,12 @@ Player.prototype.draw = function(ctx) {
     var ps = Object.keys(this.powerups);
     ctx.strokeStyle = (ps.length > 0 ? COLOURS.drops[ps[ps.length - 1]] : COLOURS.player.outline);
     ctx.lineWidth = (ps.length > 0 ? w.powerup : w.normal);
+
+    // Special case for if any-colour powerup is active - use normal outline since interior will be
+    // drop colour
+    if (POWERUP_TYPES.ANY_COLOUR in this.powerups) {
+        ctx.strokeStyle = COLOURS.player.outline;
+    }
 
     // Fill and stroke gun(s)
     var gunAngles = [0];
@@ -83,8 +95,13 @@ Player.prototype.draw = function(ctx) {
             -SIZES.player.gun.width / 2, 0, SIZES.player.gun.width, SIZES.player.gun.height
         ];
 
-        // i==0 corresponds to bottom colour, i.e. colour 2
-        ctx.fillStyle = COLOURS.player.colours[(2 - i) % 4];
+        if (POWERUP_TYPES.ANY_COLOUR in this.powerups) {
+            ctx.fillStyle = COLOURS.drops.anyColour;
+        }
+        else {
+            // i==0 corresponds to bottom colour, i.e. colour 2
+            ctx.fillStyle = COLOURS.player.colours[(2 - i) % 4];
+        }
 
         ctx.fillRect.apply(ctx, rectArgs);
         ctx.strokeRect.apply(ctx, rectArgs);
