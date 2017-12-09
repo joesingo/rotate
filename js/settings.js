@@ -12,6 +12,9 @@ TIMINGS = {
 };
 
 SIZES = {
+    "canvas": {
+        "width": 600, "height": 700
+    },
     "player": {
         "size": 60,
         "outlineWidth": {
@@ -77,7 +80,7 @@ CONSTANTS = {
     "scoreFont": "Ranga",
     "lifeFlashes": 2,  // How many times to flash lives
     "enemyCreation": {
-        "initial": 2,
+        "initial": 1.5,
         "min": 0.5,
         "gradient": -0.1 / 15,  // Decrease by 0.1 every 15 seconds
     },

@@ -33,7 +33,7 @@
         <p><button id="replay-button" onclick="startGame()">Play again</button>
     </div>
 
-    <canvas id="game-canvas" width=800 height=600></canvas>
+    <canvas id="game-canvas"></canvas>
 
     <script type="text/javascript" src="js/animation_handler.js"></script>
     <script type="text/javascript" src="js/bomb.js"></script>
@@ -80,6 +80,9 @@
     }
 
     var canvas = document.getElementById("game-canvas");
+    canvas.width = SIZES.canvas.width;
+    canvas.height = SIZES.canvas.height;
+
     var game = createGame();
     // Draw first frame to just to show something in the background whilst help text is displayed
     game.update(0);
