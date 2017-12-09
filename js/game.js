@@ -228,7 +228,7 @@ Game.prototype.update = function(dt) {
     }
 
     if (this.livesVisible) {
-        this.drawLives(this.ctx, this.player.lives);
+        this.drawLives(this.player.lives);
     }
 
     // Draw score
@@ -242,6 +242,11 @@ Game.prototype.update = function(dt) {
     for (var i=0; i<this.expirables.scorePopups.length; i++) {
         var p = this.expirables.scorePopups[i];
         p.draw(this.ctx);
+    }
+
+    if (this.expirables.powerups.length > 0) {
+        var p = this.expirables.powerups[0];
+        this.drawPowerupBar(p.type, p.timeRemaining / p.timeToLive);
     }
 }
 
@@ -373,13 +378,31 @@ Game.prototype.gameOver = function(e) {
     this.endGameCallback();
 }
 
-Game.prototype.drawLives = function(ctx, n) {
+Game.prototype.drawLives = function(n) {
     var x = CONSTANTS.padding + SIZES.drops.width / 2;
     var y = CONSTANTS.padding + SIZES.drops.height / 2;
     for (var i=0; i<n; i++) {
-        DropItem.draw(ctx, POWERUP_TYPES.LIFE, x, y);
+        DropItem.draw(this.ctx, POWERUP_TYPES.LIFE, x, y);
         x += SIZES.drops.width + CONSTANTS.padding;
     }
+}
+
+/*
+ * Draw a bar under the player's lives to indicate how much longer a powerup
+ * is active for. `percentageComplete` is a number in [0, 1] where 1 means
+ * only just started, 0 means powerup is finished
+ */
+Game.prototype.drawPowerupBar = function(type, percentageComplete) {
+    var x = CONSTANTS.padding;
+    var y = 2 * CONSTANTS.padding + SIZES.drops.height + SIZES.powerupBar.height / 2;
+    var width = percentageComplete * SIZES.powerupBar.width;
+    var height = SIZES.powerupBar.height;
+    var o = SIZES.powerupBar.outline;
+
+    this.ctx.fillStyle = COLOURS.drops.outline;
+    this.ctx.fillRect(x, y, width, height);
+    this.ctx.fillStyle = COLOURS.drops[type];
+    this.ctx.fillRect(x + o, y + o, width - 2 * o, height - 2 * o);
 }
 
 /*
@@ -406,5 +429,7 @@ Game.prototype.addPowerup = function(type) {
     p.expire = function() {
         delete this.player.powerups[type];
     }.bind(this);
+    // Record powerup type to use when drawing powerup bar
+    p.type = type;
     this.expirables.powerups.push(p);
 }

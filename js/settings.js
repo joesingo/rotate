@@ -7,7 +7,7 @@ TIMINGS = {
     "shootInterval": 0.2,
     "scorePopup": 0.5,    // Amount of time the score popups are shown for
     "lifeFlashes": 0.25,  // How long to flash lives for upon life loss
-    "powerups": 5,        // How long time-based powerups last for
+    "powerups": 7,        // How long time-based powerups last for
     "dropItems": 7,       // How long drop items last until expiring
 };
 
@@ -39,6 +39,9 @@ SIZES = {
     },
     "score": {
         "total": 35, "popup": 25
+    },
+    "powerupBar": {
+        "width": 200, "height": 10, "outline": 2
     },
 };
 
