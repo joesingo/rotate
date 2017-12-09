@@ -16,7 +16,8 @@ function Game(canvas, endGameCallback) {
     this.ctx = canvas.getContext("2d");
     this.width = canvas.width;
     this.height = canvas.height;
-    this.inProgress = true;
+    this.inProgress = false;
+    this.isPaused = false;
     this.endGameCallback = endGameCallback;
 
     this.player = new Player(this.width / 2, 100);
@@ -59,6 +60,8 @@ function Game(canvas, endGameCallback) {
  * Start timer for main game loop
  */
 Game.prototype.start = function() {
+    this.inProgress = true;
+
     var now = null;
     var then = performance.now();
     var mainLoop = window.setInterval(function() {
@@ -66,10 +69,10 @@ Game.prototype.start = function() {
         var dt = (now - then) / 1000;
         then = now;
 
-        if (this.inProgress) {
+        if (this.inProgress && !this.isPaused) {
             this.update(dt);
         }
-        else {
+        else if (!this.inProgress) {
             window.clearInterval(mainLoop);
         }
     }.bind(this), 10);
@@ -347,6 +350,12 @@ Game.prototype.handleKeyDown = function(e) {
         this.animationHandlers.playerRotations.addToQueue([
             this.player.getRotationCallback(direction), 0, 1, TIMINGS.rotationTime
         ]);
+    }
+
+    // Toggle pause
+    if (this.inProgress && e.keyCode == KEYS.pause) {
+        this.isPaused = !this.isPaused;
+        document.getElementById("pause-popup").style.display = (this.isPaused ? "block" : "none");
     }
 }
 

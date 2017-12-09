@@ -103,5 +103,7 @@ KEYS = {
     "rotateClockwise": 40,       // Down arrow
 
     "shoot": 32,  // Space
+
+    "pause": 27,  // Escape
 };
 

@@ -51,7 +51,7 @@ canvas {
     padding: 0 4px;
 }
 
-#end-game-popup {
+#end-game-popup, #pause-popup {
     display: none;
     text-align: center;
 }
