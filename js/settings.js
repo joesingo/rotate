@@ -85,7 +85,7 @@ CONSTANTS = {
     "enemyCreation": {
         "initial": 1.5,
         "min": 0.5,
-        "gradient": -0.1 / 15,  // Decrease by 0.1 every 15 seconds
+        "gradient": -0.1 / 30,  // Decrease by 0.1 every 30 seconds
     },
     "enemySpeeds": {
         "min": 45, "max": 120
@@ -111,5 +111,13 @@ KEYS = {
     "shoot": 32,  // Space
 
     "pause": 27,  // Escape
+
+    "mute": 77,   // M
 };
 
+AUDIO = {
+    "shoot": {"path": "audio/shoot.wav", "volume": 0.7},
+    "explosion": {"path": "audio/explosion.wav", "volume": 0.7},
+    "rotate": {"path": "audio/rotate.wav"},
+    "success": {"path": "audio/coin.wav", "volume": 0.3},
+}

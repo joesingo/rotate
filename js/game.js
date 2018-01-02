@@ -54,6 +54,8 @@ function Game(canvas, endGameCallback) {
     // The actual powerups, for time-based powerups
     this.expirables.powerups = [];
     this.livesVisible = true;
+
+    this.audio = new AudioManager();
 }
 
 /*
@@ -107,8 +109,12 @@ Game.prototype.update = function(dt) {
     // Handle shooting - start a timer if the key is held down and a timer doesn't
     // already exist
     if (KEYS.shoot in this.pressedKeys && !("shoot" in this.timers)) {
-        this.player.shoot();
-        this.timers["shoot"] = new Timer(TIMINGS.shootInterval, this.player.shoot.bind(this.player));
+        var shoot = function() {
+            this.player.shoot();
+            this.audio.play("shoot");
+        }.bind(this);
+        this.timers["shoot"] = new Timer(TIMINGS.shootInterval, shoot);
+        shoot();
     }
 
     // Scroll enemies
@@ -326,6 +332,8 @@ Game.prototype.handleEnemyCollision = function(enemy, type) {
 
 
 Game.prototype.loseLife = function() {
+    this.audio.play("explosion");
+
     this.player.lives--;
 
     if (this.player.lives == 0) {
@@ -345,22 +353,30 @@ Game.prototype.loseLife = function() {
 Game.prototype.increasePlayerScore = function(n, hitX, hitY) {
     this.player.score += n;
     this.expirables.scorePopups.push(new ScorePopup(n, hitX, hitY));
+    this.audio.play("success");
 }
 
 Game.prototype.handleKeyDown = function(e) {
     this.pressedKeys[e.keyCode] = true;
 
+    // Rotate
     if (e.keyCode == KEYS.rotateAnticlockwise || e.keyCode == KEYS.rotateClockwise) {
         var direction = (e.keyCode == KEYS.rotateAnticlockwise) ? ANTI_CLOCKWISE : CLOCKWISE;
+        this.audio.play("rotate");
         this.animationHandlers.playerRotations.addToQueue([
             this.player.getRotationCallback(direction), 0, 1, TIMINGS.rotationTime
         ]);
     }
 
     // Toggle pause
-    if (this.inProgress && e.keyCode == KEYS.pause) {
+    else if (this.inProgress && e.keyCode == KEYS.pause) {
         this.isPaused = !this.isPaused;
         document.getElementById("pause-popup").style.display = (this.isPaused ? "block" : "none");
+    }
+
+    // Toggle mute
+    else if (e.keyCode == KEYS.mute) {
+        this.audio.muted = !this.audio.muted;
     }
 }
 
