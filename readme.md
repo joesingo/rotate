@@ -3,6 +3,8 @@
 A game in which you control a multi-coloured square and shoot bombs, collect powerups and
 rotate to match the colour of moving targets.
 
+![Gameplay screenshot](screenshot.png)
+
 ## Sound effects ##
 
 All sound effects were downloaded from [freesound.org](https://freesound.org)
