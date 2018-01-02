@@ -3,6 +3,8 @@
 A game in which you control a multi-coloured square and shoot bombs, collect powerups and
 rotate to match the colour of moving targets.
 
+Created from scratch using JS canvas.
+
 ![Gameplay screenshot](screenshot.png)
 
 ## Sound effects ##
