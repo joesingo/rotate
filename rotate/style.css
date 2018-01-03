@@ -39,6 +39,11 @@
     margin-bottom: 10px;
 }
 
+
+#canvas-wrapper {
+    position: relative;
+}
+
 canvas {
     display: block;
     margin:auto;

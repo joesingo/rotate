@@ -7,45 +7,47 @@
 </head>
 
 <body>
-    <div class="popup" id="help-text">
-        <h2>Rotate</h2>
-        <p>
-            You control a multi-coloured square - move with <span class="key">WASD</span>,
-            rotate with arrow keys and shoot with <span class="key">Space</span>.
-        </p>
-        <ul>
-            <li>Rotate to match the colour of the coloured squares and crash into them</li>
-            <li>Shoot the black bombs</li>
-            <li>Don't let anything touch the top of the screen</li>
-            <li>Pick up the flashing powerups</li>
-            <li>Your lives are shown in the top left, and points in the top right</li>
-        </ul>
-        <p>
-            Pause with <span class="key">Esc</span>, mute with <span class="key">M</span>
-        </p>
-        <p id="button-wrapper"><button id="play-button" onclick="startGame()">Play</button></p>
+    <div id="canvas-wrapper">
+        <div class="popup" id="help-text">
+            <h2>Rotate</h2>
+            <p>
+                You control a multi-coloured square - move with <span class="key">WASD</span>,
+                rotate with arrow keys and shoot with <span class="key">Space</span>.
+            </p>
+            <ul>
+                <li>Rotate to match the colour of the coloured squares and crash into them</li>
+                <li>Shoot the black bombs</li>
+                <li>Don't let anything touch the top of the screen</li>
+                <li>Pick up the flashing powerups</li>
+                <li>Your lives are shown in the top left, and points in the top right</li>
+            </ul>
+            <p>
+                Pause with <span class="key">Esc</span>, mute with <span class="key">M</span>
+            </p>
+            <p id="button-wrapper"><button id="play-button" onclick="startGame()">Play</button></p>
 
-        <p class="credit">
-            Sound effects obtained from <a href="https://freesound.org">freesound.org</a>
-            <br />
-            See credits on <a href="https://github.com/joesingo/rotate/blob/master/readme.md"
-                              title="Credits for sound effects">
-                GitHub
-            </a>
-        </p>
+            <p class="credit">
+                Sound effects obtained from <a href="https://freesound.org">freesound.org</a>
+                <br />
+                See credits on <a href="https://github.com/joesingo/rotate/blob/master/readme.md"
+                                  title="Credits for sound effects">
+                    GitHub
+                </a>
+            </p>
+        </div>
+
+        <div class="popup" id="pause-popup">
+            <h2>Paused</h2>
+        </div>
+
+        <div class="popup" id="end-game-popup">
+            <h2>Game Over</h2>
+            <p>You scored <span></span> points</p>
+            <p id="button-wrapper"><button id="replay-button" onclick="startGame()">Play again</button>
+        </div>
+
+        <canvas id="game-canvas"></canvas>
     </div>
-
-    <div class="popup" id="pause-popup">
-        <h2>Paused</h2>
-    </div>
-
-    <div class="popup" id="end-game-popup">
-        <h2>Game Over</h2>
-        <p>You scored <span></span> points</p>
-        <p id="button-wrapper"><button id="replay-button" onclick="startGame()">Play again</button>
-    </div>
-
-    <canvas id="game-canvas"></canvas>
 
     <script type="text/javascript" src="js/animation_handler.js"></script>
     <script type="text/javascript" src="js/bomb.js"></script>
