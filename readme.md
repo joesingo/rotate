@@ -5,6 +5,8 @@ rotate to match the colour of moving targets.
 
 Created from scratch using JS canvas.
 
+Play it at [joesingo.co.uk/projects/rotate/](http://joesingo.co.uk/projects/rotate/)
+
 ![Gameplay screenshot](screenshot.png)
 
 ## Sound effects ##
