@@ -65,10 +65,10 @@ canvas {
     font-size: 0.6em;
 }
 
-a {
+#canvas-wrapper a {
     color: inherit;
 }
 
-a:hover {
+#canvas-wrapper a:hover {
     color: gray;
 }
