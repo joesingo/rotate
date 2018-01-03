@@ -357,6 +357,10 @@ Game.prototype.increasePlayerScore = function(n, hitX, hitY) {
 }
 
 Game.prototype.handleKeyDown = function(e) {
+    if (!this.inProgress) {
+        return;
+    }
+
     this.pressedKeys[e.keyCode] = true;
 
     var keyHandled = true;
@@ -371,7 +375,7 @@ Game.prototype.handleKeyDown = function(e) {
     }
 
     // Toggle pause
-    else if (this.inProgress && e.keyCode == KEYS.pause) {
+    else if (e.keyCode == KEYS.pause) {
         this.isPaused = !this.isPaused;
         document.getElementById("pause-popup").style.display = (this.isPaused ? "block" : "none");
     }
