@@ -359,6 +359,8 @@ Game.prototype.increasePlayerScore = function(n, hitX, hitY) {
 Game.prototype.handleKeyDown = function(e) {
     this.pressedKeys[e.keyCode] = true;
 
+    var keyHandled = true;
+
     // Rotate
     if (e.keyCode == KEYS.rotateAnticlockwise || e.keyCode == KEYS.rotateClockwise) {
         var direction = (e.keyCode == KEYS.rotateAnticlockwise) ? ANTI_CLOCKWISE : CLOCKWISE;
@@ -378,6 +380,15 @@ Game.prototype.handleKeyDown = function(e) {
     else if (e.keyCode == KEYS.mute) {
         this.audio.muted = !this.audio.muted;
     }
+
+    else {
+        keyHandled = false;
+    }
+
+    if (keyHandled) {
+        e.preventDefault();
+    }
+
 }
 
 Game.prototype.handleKeyUp = function(e) {
